@@ -1,0 +1,1195 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid main-div">
+    <!-- Quote Section -->
+    <div class="quote-section">
+        <div class="quote-container">
+            <p class="quote-text"><i class="fa-solid fa-quote-left fa-xs" style="margin-right: 10px;"></i>{{ quote.text }}<i class="fa-solid fa-quote-right fa-xs" style="margin-left: 10px;"></i></p>
+            <p class="quote-author">— {{ quote.author }}</p>
+        </div>
+    </div>
+
+    <!-- Categories Carousel -->
+    <div class="categories-section border-bottom py-3 bg-white mt-3">
+        <div class="container-fluid">
+            <div class="categories-wrapper">
+                <button class="nav-arrow prev-arrow">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                
+                <div class="categories-carousel">
+                    <button class="category-btn {% if not selected_category and not following_feed %}active{% endif %}">
+                        <i class="fas fa-home"></i> For you
+                    </button>
+                    <button class="category-btn {% if following_feed %}active{% endif %}">
+                        <i class="fas fa-user-friends"></i> Following
+                    </button>
+                    {% for category in categories %}
+                    <button class="category-btn {% if selected_category == category.category %}active{% endif %}">
+                        {{ category.category }}
+                    </button>
+                    {% endfor %}
+                </div>
+
+                <button class="nav-arrow next-arrow">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container-fluid py-4 mt-2">
+        <div class="row">
+            <!-- Main Content -->
+<div class="col-md-8 mb-4">
+    <div id="notes-container">
+        {% include 'blog/note_items_partial.html' %}
+    </div>
+    
+    <!-- Show More Button -->
+    {% if has_more %}
+    <div class="text-center mt-4 mb-5">
+        <button id="load-more" class="btn btn-outline-primary" 
+                data-page="{{ current_page }}" 
+                data-category="{{ selected_category|default:'' }}">
+            <i class="fas fa-sync-alt me-1"></i> Show More
+        </button>
+    </div>
+    {% endif %}
+</div>
+            <!-- Main Content 
+            <div class="col-md-8 mb-4">
+                {% for note in recent_notes %}
+                <article class="note-item mb-4">
+                    <div class="d-flex align-items-center mb-3">
+                        <img src="{{ note.user.profile_pic.url }}"
+                             class="rounded-circle me-2" 
+                             width="40" height="40" 
+                             alt="{{ note.user.username }}">
+                        <div class="post-meta">
+                            <div class="author-name">{{ note.user.username }}</div>
+                            <div class="post-date text-muted">{{ note.created_at|date:"M d, Y" }}</div>
+                        </div>
+                        <div class="ms-auto d-flex align-items-center">
+                            <button class="btn btn-md btn-star me-2 {% if note in starred_notes %}starred{% endif %}"
+                                    data-note-id="{{ note.id }}">
+                                <i class="fas fa-star"></i>
+                                <span class="star-count">{{ note.star_count }}</span>
+                            </button>
+                            
+                            <button class="btn btn-md btn-bookmark {% if note in bookmarked_notes %}bookmarked{% endif %}"
+                                    data-note-id="{{ note.id }}">
+                                <i class="fas fa-bookmark"></i>
+                            </button>
+                        </div>
+                    </div> -->
+                    <!-- 
+
+                    <div class="row">
+                        <div class="{% if note.get_first_content_image %}col-md-7{% else %}col-11{% endif %}">
+                            <h4 class="post-title mb-2">
+                                <a href="{% url 'note_detail' note.id %}" class="text-dark text-decoration-none">
+                                    {{ note.title }}
+                                </a>
+                            </h4>
+                            <p class="post-excerpt text-muted" style="font-size: 14px;">
+                                {{ note.description|truncatechars:150 }}
+                            </p>
+                            
+                            <div class="post-footer d-flex align-items-center justify-content-between">
+                                <div class="d-flex align-items-center">
+                                    <span class="badge category-badge category-{{ note.category|lower }} me-2">
+                                        {% if note.category == "other" %}
+                                            {{ note.other_category }}
+                                        {% else %}
+                                            {{ note.get_category_display }}
+                                        {% endif %}
+                                    </span>
+                                    <span class="text-muted">{{ note.views_count }} views</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {% with image_data=note.get_first_content_image_data %}
+                            {% if image_data.0 %}
+                            <div class="col-md-4 ms-4">
+                                <div class="note-image-wrapper">
+                                    {% if image_data.0 == 'url' %}
+                                        <img src="{{ image_data.1 }}"
+                                            class="note-preview-image" 
+                                            alt="Preview for {{ note.title }}">
+                                    {% else %}
+                                        <img src="data:{{ image_data.0 }};base64,{{ image_data.1 }}"
+                                            class="note-preview-image" 
+                                            alt="Preview for {{ note.title }}">
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endif %}
+                        {% endwith %}
+                    </div>
+                </article>
+                {% endfor %}
+            </div>  -->
+
+            <!-- Enhanced Leaderboards 
+            <div class="col-md-4" style="padding-right: 0;">
+                <div class="leaderboard mb-4">
+                    <div class="leaderboard-header">
+                        <i class="fas fa-crown"></i>
+                        <h5>Most Viewed</h5>
+                    </div>
+                    <div class="leaderboard-list">
+                        {% for note in most_viewed %}
+                        <a href="{% url 'note_detail' note.id %}" class="leaderboard-item">
+                            <div class="rank-badge">{{ forloop.counter }}</div>
+                            <div class="leaderboard-content">
+                                <h6 class="leaderboard-title">{{ note.title }}</h6>
+                                <div class="stats">
+                                    <span class="views">
+                                        <i class="fas fa-eye"></i>{{ note.views_count }}
+                                    </span>
+                                </div>
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="leaderboard">
+                    <div class="leaderboard-header">
+                        <i class="fas fa-award"></i>
+                        <h5>Most Starred</h5>
+                    </div>
+                    <div class="leaderboard-list">
+                        {% for note in most_starred %}
+                        <a href="{% url 'note_detail' note.id %}" class="leaderboard-item">
+                            <div class="rank-badge">{{ forloop.counter }}</div>
+                            <div class="leaderboard-content">
+                                <h6 class="leaderboard-title">{{ note.title }}</h6>
+                                <div class="stats">
+                                    <span class="stars">
+                                        <i class="fas fa-star"></i>{{ note.star_count }}
+                                    </span>
+                                </div>
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div> -->
+
+            <!-- Updated Top Authors Leaderboard Section -->
+<div class="col-md-4" style="padding-left: 15px; padding-right: 0;">
+    <!-- Top Authors Leaderboard -->
+    <div class="leaderboard mb-4">
+        <div class="leaderboard-header">
+            <i class="fas fa-trophy"></i>
+            <h4>Top Authors</h4>
+        </div>
+        <div class="leaderboard-list">
+            {% for author in top_authors %}
+            <div class="leaderboard-item">
+                <div class="rank-badge">{{ forloop.counter }}</div>
+                <div class="author-info">
+                    <img src="{{ author.profile_pic.url }}" 
+                         class="rounded-circle" 
+                         width="30" height="30" 
+                         alt="{{ author.username }}">
+                         <a href="{% url 'user_profile_view' author.id %}" style="text-decoration: none;">
+                            <h5 class="leaderboard-title">{{ author.username }}</h5>
+                        </a>
+                </div>
+                <div class="author-stats">
+                    <span class="views">
+                        <i class="fas fa-eye"></i>{{ author.total_views|default:"0" }}
+                    </span>
+                    <span class="stars">
+                        <i class="fas fa-star"></i>{{ author.total_stars|default:"0" }}
+                    </span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Recently Bookmarked -->
+    <div class="recent-bookmarks">
+        <div class="recent-bookmarks-header">
+            <i class="fas fa-bookmark"></i>
+            <h5>Recently Bookmarked</h5>
+        </div>
+        <div class="p-2">
+            {% if recent_bookmark %}
+            <div class="recent-bookmark-item mb-3">
+                <div class="d-flex align-items-center mb-2">
+                    <img src="{{ recent_bookmark.user.profile_pic.url }}"
+                         class="rounded-circle me-2" 
+                         width="24" height="24" 
+                         alt="{{ recent_bookmark.user.username }}">
+                    <div class="author-name small">{{ recent_bookmark.user.username }}</div>
+                </div>
+                <h6><a href="{% url 'note_detail' recent_bookmark.id %}" class="text-decoration-none">{{ recent_bookmark.title }}</a></h6>
+                <p class="small">{{ recent_bookmark.description|truncatechars:80 }}</p>
+            </div>
+            {% else %}
+            <p class="text-center">No bookmarks yet</p>
+            {% endif %}
+            
+            <div class="text-center mt-3">
+                <a href="{% url 'bookmarked_notes' %}" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-bookmark me-1"></i> View All Bookmarks
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+            
+        </div>
+    </div>
+</div>
+
+<style>
+/* Base Styles */
+body {
+    font-family: "Poppins", serif;
+    background-color: #ffffff;
+}
+
+.main-div{
+    padding-left: 40px;
+    padding-right: 40px;
+}
+
+/* Full-Width Sleek Quote Styles */
+.quote-section {
+    background-color: #f9fafb;
+    padding: 0.4rem 0;
+    border-bottom: 1px solid #ebeef2;
+}
+
+.quote-container {
+    width: 100%;
+    padding: 0.5rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.quote-text {
+    font-size: 1rem;
+    line-height: 1.3;
+    color: #333;
+    font-weight: 400;
+    margin: 0;
+    font-weight:500;
+}
+
+.quote-author {
+    font-size: 0.9rem;
+    color: #6c757d;
+    margin: 0 0 0 1rem;
+    white-space: nowrap;
+    font-weight:400;
+}
+
+@media (max-width: 768px) {
+    .quote-container {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 0.4rem 1rem;
+    }
+    
+    .quote-author {
+        align-self: flex-end;
+        margin: 0.2rem 0 0 0;
+    }
+}
+
+/* Categories Section */
+.categories-section {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.categories-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.categories-carousel {
+    display: flex;
+    overflow-x: hidden;
+    scroll-behavior: smooth;
+    gap: 0.5rem;
+    padding: 0 0.5rem;
+}
+
+.nav-arrow {
+    background: white;
+    border: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    cursor: pointer;
+    z-index: 1;
+}
+
+.category-btn {
+    color: #6B6B6B;
+    border: none;
+    background: none;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    white-space: nowrap;
+    transition: all 0.3s ease;
+}
+
+.category-btn:hover,
+.category-btn.active {
+    background-color: #f0f0f0;
+    color: #000;
+}
+
+/* Note Item Styles */
+.note-item {
+    border-bottom: 1px solid #e4e3e3;
+    padding-bottom: 2rem;
+    margin-bottom: 2rem;
+}
+
+.author-name {
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.post-title{
+    font-weight: 640;
+}
+
+.post-date {
+    font-size: 0.8rem;
+}
+
+.note-image-wrapper {
+    border-radius: 8px;
+    overflow: hidden;
+    aspect-ratio: 16/9;
+}
+
+.note-preview-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Category Badge Styles */
+.category-badge {
+    padding: 0.4em 0.8em;
+    font-size: 0.85rem;
+}
+
+.category-physics {
+    background-color: #1e4a1f; /* Darker shade of green */
+}
+
+.category-chemistry {
+    background-color: #3b7a3d; /* Medium shade of green */
+}
+
+.category-biology {
+    background-color: #5cb85c; /* Lighter shade of green */
+}
+
+.category-astronomy {
+    background-color: #2f7731; /* Original green */
+}
+
+.category-environmental_science {
+    background-color: #4cae4c; /* Another shade of green */
+}
+
+/* Technology Subcategories */
+.category-computer_science {
+    background-color: #a80808; /* Darker shade of red */
+}
+
+.category-engineering {
+    background-color: #d9534f; /* Medium shade of red */
+}
+
+.category-information_technology {
+    background-color: #ee2c09; /* Original red */
+}
+
+.category-artificial_intelligence {
+    background-color: #ff5c5c; /* Lighter shade of red */
+}
+
+.category-data_science {
+    background-color: #ff7f7f; /* Another shade of red */
+}
+
+/* Other Categories */
+.category-mathematics {
+    background-color: #9c27b0; /* Original purple */
+}
+
+.category-history {
+    background-color: #FF9800; /* Original orange */
+}
+
+.category-arts {
+    background-color: #65c923; /* Original lime green */
+}
+
+.category-literature {
+    background-color: #8bc34a; /* Lighter shade of lime green */
+}
+
+.category-business {
+    background-color: #4caf50; /* Another shade of green */
+}
+
+.category-health_wellness {
+    background-color: #81c784; /* Lighter shade of green */
+}
+
+.category-language {
+    background-color: #a5d6a7; /* Very light shade of green */
+}
+
+.category-travel_culture {
+    background-color: #ffa726; /* Lighter shade of orange */
+}
+
+.category-personal_development {
+    background-color: #ffb74d; /* Very light shade of orange */
+}
+
+.category-hobbies {
+    background-color: #ffcc80; /* Another light shade of orange */
+}
+
+.category-education {
+    background-color: #ff9800; /* Original orange */
+}
+
+.category-politics {
+    background-color: #e64a19; /* Darker shade of orange */
+}
+
+.category-philosophy {
+    background-color: #ff7043; /* Lighter shade of orange */
+}
+
+.category-psychology {
+    background-color: #ff8a65; /* Another light shade of orange */
+}
+
+.category-food_cooking {
+    background-color: #f51c93; /* Original pink */
+}
+
+.category-sports_fitness {
+    background-color: #e91e63; /* Darker shade of pink */
+}
+
+.category-entertainment {
+    background-color: #ff4081; /* Lighter shade of pink */
+}
+
+.category-design {
+    background-color: #ff79b0; /* Very light shade of pink */
+}
+
+.category-spirituality {
+    background-color: #ffa6c2; /* Another light shade of pink */
+}
+
+.category-parenting {
+    background-color: #f06292; /* Medium shade of pink */
+}
+
+.category-diy_crafts {
+    background-color: #ec407a; /* Another shade of pink */
+}
+
+.category-gaming {
+    background-color: #6a156d; /* Another shade of pink */
+}
+
+.category-other {
+    background-color: #f51c93; /* Original pink */
+}
+
+/* Action Buttons */
+.btn-bookmark {
+    background: none;
+    border: none;
+    padding: 0.25rem 0.5rem;
+    transition: transform 0.2s ease;
+}
+
+.btn-star {
+    background: none;
+    border: none;
+    color: #cac9c9;
+}
+
+.btn-star:hover{
+    color: gold;
+}
+
+.btn-star.starred {
+    color: gold;
+}
+.btn-bookmark { color: #cac9c9; }
+.btn-bookmark.bookmarked { color: black; }
+
+.btn-star:hover,
+.btn-bookmark:hover {
+    transform: scale(1.1);
+}
+
+/* Gamified Leaderboard Styles */
+/* Updated Leaderboard Styles */
+.leaderboard {
+    background: linear-gradient(145deg, #2b2d42, #353957);
+    border-radius: 12px;
+    padding: 1rem;
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+    border: 1px solid #393c5f;
+    margin-bottom: 1.5rem;
+    position: relative;
+    overflow: hidden;
+    color: #ffffff;
+    max-width: 90%;
+    margin-left: auto;
+}
+
+.leaderboard::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 5px;
+    background: linear-gradient(90deg, #ffd700, #ff9500, #ff5e62);
+}
+
+.leaderboard-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.leaderboard-header h4 {
+    font-weight: 700;
+    margin: 0;
+    text-align: center;
+    font-size: 1.5rem;
+    color: #ffffff;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    background: linear-gradient(90deg, #ffd700, #ff9500);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.leaderboard-header i {
+    font-size: 1.2rem;
+    color: #ffd700;
+    margin-right: 0.5rem;
+}
+
+.leaderboard-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+/* Updated Leaderboard Item Design */
+.leaderboard-item {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 0.75rem;
+    position: relative;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Gold for 1st */
+.leaderboard-item:nth-child(1) {
+    background: rgba(255, 215, 0, 0.15);
+    border: 1px solid rgba(255, 215, 0, 0.3);
+}
+
+/* Silver for 2nd */
+.leaderboard-item:nth-child(2) {
+    background: rgba(224, 224, 224, 0.1);
+    border: 1px solid rgba(224, 224, 224, 0.2);
+}
+
+/* Bronze for 3rd */
+.leaderboard-item:nth-child(3) {
+    background: rgba(205, 127, 50, 0.1);
+    border: 1px solid rgba(205, 127, 50, 0.2);
+}
+
+.rank-badge {
+    min-width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.85rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+    color: white;
+    position: relative;
+    z-index: 1;
+    margin-right: 5px;
+}
+
+.rank-badge::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background-color: #777;
+    z-index: -1;
+}
+
+/* Gold badge */
+.leaderboard-item:nth-child(1) .rank-badge::before {
+    background: linear-gradient(135deg, #ffd700, #ff9500);
+}
+
+/* Silver badge */
+.leaderboard-item:nth-child(2) .rank-badge::before {
+    background: linear-gradient(135deg, #d4d4d4, #adadad);
+}
+
+/* Bronze badge */
+.leaderboard-item:nth-child(3) .rank-badge::before {
+    background: linear-gradient(135deg, #cd7f32, #a05e1f);
+}
+
+/* Other badges */
+.leaderboard-item:nth-child(n+4) .rank-badge::before {
+    background: linear-gradient(135deg, #6c757d, #495057);
+}
+
+.author-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex: 1;
+}
+
+.leaderboard-title {
+    margin: 0;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #ffffff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.author-stats {
+    display: flex;
+    gap: 0.5rem;
+    margin-left: auto;
+}
+
+.views, .stars {
+    display: flex;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 0.25rem 0.5rem;
+    border-radius: 30px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.views i, .stars i {
+    margin-right: 0.25rem;
+    font-size: 0.8rem;
+}
+
+.views i {
+    color: #4e9fff;
+}
+
+.stars i {
+    color: #ffd700;
+}
+
+/* Recently Bookmarked Styles */
+.recent-bookmarks {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 1rem;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e9ecef;
+    color: #212529;
+    max-width: 90%;
+    margin-left: auto;
+}
+
+.recent-bookmarks-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.recent-bookmarks-header h5 {
+    font-weight: 600;
+    margin: 0;
+    text-align: center;
+    font-size: 1rem;
+    color: #495057;
+}
+
+.recent-bookmarks-header i {
+    font-size: 1.1rem;
+    color: #6c757d;
+    margin-right: 0.5rem;
+}
+
+.recent-bookmark-item {
+    background: #ffffff;
+    padding: 0.75rem;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    border: 1px solid #e9ecef;
+}
+
+.recent-bookmark-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Maintain right corner positioning */
+@media (min-width: 768px) {
+    .col-md-4 .leaderboard,
+    .col-md-4 .recent-bookmarks {
+        margin-right: 0;
+    }
+}
+
+
+/* Shimmer effect for rank 1 */
+.leaderboard-item:nth-child(1) {
+    position: relative;
+    overflow: hidden;
+    background: rgba(255, 215, 0, 0.15);
+    border: 1px solid rgba(255, 215, 0, 0.3);
+}
+
+.leaderboard-item:nth-child(1)::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.2),
+        transparent
+    );
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    100% {
+        left: 200%;
+    }
+}
+
+/* Special effect for rank 2 */
+.leaderboard-item:nth-child(2) {
+    background: rgba(224, 224, 224, 0.1);
+    border: 1px solid rgba(224, 224, 224, 0.2);
+}
+
+/* Special effect for rank 3 */
+.leaderboard-item:nth-child(3) {
+    background: rgba(205, 127, 50, 0.1);
+    border: 1px solid rgba(205, 127, 50, 0.2);
+}
+
+.leaderboard-item:hover {
+    transform: translateX(8px);
+    border-color: rgba(255, 215, 0, 0.3);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.leaderboard-item:hover::after {
+    opacity: 1;
+    right: 0.5rem;
+}
+
+/* Show More button styling */
+#load-more {
+    padding: 0.5rem 2rem;
+    border-radius: 50px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+#load-more:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+#load-more:active {
+    transform: translateY(0);
+}
+
+/* Loading animation */
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.fa-spin {
+    animation: spin 1s linear infinite;
+}
+
+/* Follow Button Styling */
+.follow-btn {
+    font-size: 0.75rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 30px;
+    background-color: #f0f0f0;
+    color: #444;
+    transition: all 0.2s ease;
+    border: 1px solid #ddd;
+}
+
+.follow-btn:hover {
+    background-color: #e0e0e0;
+    transform: translateY(-1px);
+}
+
+.follow-btn.following {
+    background-color: #2b2d42;
+    color: white;
+    border-color: #2b2d42;
+}
+
+.follow-btn.following:hover {
+    background-color: #dc3545;
+    border-color: #dc3545;
+}
+
+.follow-btn.following:hover .follow-text {
+    display: none;
+}
+
+.follow-btn.following:hover:before {
+    content: "Unfollow";
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Categories carousel navigation
+    const carousel = document.querySelector('.categories-carousel');
+    const prevBtn = document.querySelector('.prev-arrow');
+    const nextBtn = document.querySelector('.next-arrow');
+    
+    prevBtn.addEventListener('click', () => {
+        carousel.scrollBy({ left: -200, behavior: 'smooth' });
+    });
+    
+    nextBtn.addEventListener('click', () => {
+        carousel.scrollBy({ left: 200, behavior: 'smooth' });
+    });
+
+    // Use event delegation for star buttons
+    document.addEventListener('click', function(event) {
+        const starBtn = event.target.closest('.btn-star');
+        if (starBtn) {
+            event.preventDefault();
+            const noteId = starBtn.getAttribute('data-note-id');
+            toggleStar(noteId);
+        }
+    });
+
+    // Similar approach for bookmark buttons
+    document.addEventListener('click', function(event) {
+        const bookmarkBtn = event.target.closest('.btn-bookmark');
+        if (bookmarkBtn) {
+            event.preventDefault();
+            const noteId = bookmarkBtn.getAttribute('data-note-id');
+            toggleBookmark(noteId);
+        }
+    });
+
+    // Add follow button functionality
+    document.addEventListener('click', function(event) {
+        const followBtn = event.target.closest('.follow-btn');
+        if (followBtn) {
+            event.preventDefault();
+            event.stopPropagation();
+            const userId = followBtn.getAttribute('data-user-id');
+            toggleFollow(userId, followBtn);
+        }
+    });
+
+    // Category buttons
+    const categoryButtons = document.querySelectorAll('.category-btn');
+    categoryButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            // Remove active class from all buttons
+            categoryButtons.forEach(btn => btn.classList.remove('active'));
+            // Add active class to clicked button
+            this.classList.add('active');
+            
+            // Get category name from button text
+            const categoryName = this.textContent.trim();
+            
+            // For "For you" button, reset to homepage without category filter
+            if (categoryName === 'For you') {
+                window.location.href = window.location.pathname;
+            } 
+            // For "Following" button, add following parameter
+            else if (categoryName === 'Following') {
+                window.location.href = window.location.pathname + '?following=true';
+            }
+            else {
+                // Otherwise, filter by category
+                window.location.href = window.location.pathname + '?category=' + encodeURIComponent(categoryName);
+            }
+        });
+    });
+
+    // Show More functionality
+    const loadMoreBtn = document.getElementById('load-more');
+    
+    if (loadMoreBtn) {
+        loadMoreBtn.addEventListener('click', function() {
+            // Get current page and category
+            let currentPage = parseInt(this.getAttribute('data-page'));
+            const category = this.getAttribute('data-category');
+            
+            // Update to next page
+            currentPage += 1;
+            
+            // Show loading state
+            loadMoreBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Loading...';
+            loadMoreBtn.disabled = true;
+            
+            // Build URL for AJAX request
+            let url = window.location.pathname + '?page=' + currentPage;
+            if (category) {
+                url += '&category=' + encodeURIComponent(category);
+            }
+            
+            // Fetch more posts
+            fetch(url, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Append new content
+                const notesContainer = document.getElementById('notes-container');
+                notesContainer.insertAdjacentHTML('beforeend', data.html);
+                
+                // Update button data attribute
+                loadMoreBtn.setAttribute('data-page', currentPage);
+                
+                // Reset button state
+                loadMoreBtn.innerHTML = '<i class="fas fa-sync-alt me-1"></i> Show More';
+                loadMoreBtn.disabled = false;
+                
+                // Hide button if no more content
+                if (!data.has_more) {
+                    loadMoreBtn.style.display = 'none';
+                }
+            })
+            .catch(error => {
+                console.error('Error loading more posts:', error);
+                loadMoreBtn.innerHTML = '<i class="fas fa-exclamation-circle me-1"></i> Error loading posts';
+                
+                // Allow retry after error
+                setTimeout(() => {
+                    loadMoreBtn.innerHTML = '<i class="fas fa-sync-alt me-1"></i> Show More';
+                    loadMoreBtn.disabled = false;
+                }, 3000);
+            });
+        });
+    }
+});
+
+function toggleFollow(userId, buttonElement) {
+    fetch(`/follow/${userId}/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken'),
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        credentials: 'same-origin'
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
+    .then(data => {
+        // Update all buttons for this user on the page
+        const allUserButtons = document.querySelectorAll(`.follow-btn[data-user-id="${userId}"]`);
+        
+        allUserButtons.forEach(btn => {
+            if (data.is_following) {
+                btn.classList.add('following');
+                btn.querySelector('i').classList.remove('fa-user-plus');
+                btn.querySelector('i').classList.add('fa-user-check');
+                btn.querySelector('.follow-text').textContent = 'Following';
+            } else {
+                btn.classList.remove('following');
+                btn.querySelector('i').classList.remove('fa-user-check');
+                btn.querySelector('i').classList.add('fa-user-plus');
+                btn.querySelector('.follow-text').textContent = 'Follow';
+            }
+        });
+    })
+    .catch(error => {
+        console.error('Error toggling follow:', error);
+        // Provide user feedback about the error
+        alert('Unable to follow this user. Please try again later.');
+    });
+}
+
+// Star toggle function - fixed version
+function toggleStar(noteId) {
+    fetch(`/toggle-star/${noteId}/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken'),
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        credentials: 'same-origin'
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
+    .then(data => {
+        // Update UI based on response instead of reloading page
+        const starBtn = document.querySelector(`.btn-star[data-note-id="${noteId}"]`);
+        if (starBtn) {
+            if (data.starred) {
+                starBtn.classList.add('starred');
+            } else {
+                starBtn.classList.remove('starred');
+            }
+            // Update star count if available in the response
+            if (data.star_count !== undefined) {
+                const starCount = starBtn.querySelector('.star-count');
+                if (starCount) {
+                    starCount.textContent = data.star_count;
+                }
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error toggling star:', error);
+        // Provide user feedback about the error
+        alert('Unable to star this post. Please try again later.');
+    });
+}
+
+// Bookmark toggle function - fixed version
+function toggleBookmark(noteId) {
+    const url = `/toggle-bookmark/${noteId}/`;
+    
+    fetch(url, {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Accept': 'application/json'
+        },
+        credentials: 'same-origin'
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.status === 'success') {
+            // Toggle bookmarked class on the button
+            const bookmarkBtn = document.querySelector(`.btn-bookmark[data-note-id="${noteId}"]`);
+            if (bookmarkBtn) {
+                bookmarkBtn.classList.toggle('bookmarked');
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error toggling bookmark:', error);
+        alert('Unable to bookmark this post. Please try again later.');
+    });
+}
+
+// Helper function to get CSRF token
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %}

@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container my-4">
+    <h2>People You Follow</h2>
+    
+    <div class="card mt-4">
+        {% if following %}
+            <ul class="list-group list-group-flush">
+                {% for follow in following %}
+                    <li class="list-group-item d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center">
+                            <img src="{{ follow.followed.profile_pic.url }}" 
+                                 class="rounded-circle me-3" 
+                                 width="50" height="50" 
+                                 alt="{{ follow.followed.username }}">
+                            <div>
+                                <h5 class="mb-1">
+                                    <a href="{% url 'user_profile_view' follow.followed.id %}" class="text-decoration-none">
+                                        {{ follow.followed.username }}
+                                    </a>
+                                </h5>
+                                <p class="text-muted small mb-0">Following since {{ follow.created_at|date:"M d, Y" }}</p>
+                            </div>
+                        </div>
+                        <div>
+                            <button class="btn btn-sm btn-secondary unfollow-btn" data-user-id="{{ follow.followed.id }}">
+                                <i class="fas fa-user-minus"></i> Unfollow
+                            </button>
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <div class="card-body text-center my-4">
+                <div class="empty-state">
+                    <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                    <h4>You're not following anyone yet</h4>
+                    <p class="text-muted">When you follow people, you'll see them here.</p>
+                    <a href="{% url 'home' %}" class="btn btn-primary mt-3">Discover People</a>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Find all unfollow buttons on the page
+    const unfollowButtons = document.querySelectorAll('.unfollow-btn');
+    
+    // Add click event listener to each unfollow button
+    unfollowButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            // Get the user ID from the button's data attribute
+            const userId = this.getAttribute('data-user-id');
+            
+            // Store reference to the list item for removal later
+            const listItem = this.closest('.list-group-item');
+            
+            // Send AJAX request to unfollow the user
+            fetch(`/follow/${userId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': getCookie('csrftoken')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.is_following) {
+                    // Remove the list item with a fade-out effect
+                    listItem.style.transition = 'opacity 0.3s ease';
+                    listItem.style.opacity = '0';
+                    
+                    // After the fade-out animation, remove the element
+                    setTimeout(() => {
+                        listItem.remove();
+                        
+                        // Check if there are any remaining users being followed
+                        const remainingItems = document.querySelectorAll('.list-group-item');
+                        if (remainingItems.length === 0) {
+                            // If no more users are being followed, display the empty state
+                            displayEmptyState();
+                        }
+                    }, 300);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to unfollow user. Please try again.');
+            });
+        });
+    });
+    
+    // Function to get CSRF token from cookies
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    
+    // Function to display empty state when no users are being followed
+    function displayEmptyState() {
+        const container = document.querySelector('.card');
+        container.innerHTML = `
+            <div class="card-body text-center my-4">
+                <div class="empty-state">
+                    <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                    <h4>You're not following anyone yet</h4>
+                    <p class="text-muted">When you follow people, you'll see them here.</p>
+                    <a href="{% url 'home' %}" class="btn btn-primary mt-3">Discover People</a>
+                </div>
+            </div>
+        `;
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,679 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid main-div">
+    <div class="container-fluid py-4 mt-4">
+        <div class="row">
+            <!-- Main Content -->
+            <div class="col-md-8 mb-4">
+                <h3 class="mb-4">Search Results for "{{ query }}"</h3>
+                
+                {% if search_results %}
+                    <div class="search-stats mb-3">
+                        <p>Found {{ search_results|length }} result{{ search_results|length|pluralize }}</p>
+                    </div>
+                    
+                    {% for note in search_results %}
+                    <article class="note-item mb-4">
+                        <div class="d-flex align-items-center mb-3">
+                            <img src="{{ note.user.profile_pic.url }}"
+                                 class="rounded-circle me-2" 
+                                 width="40" height="40" 
+                                 alt="{{ note.user.username }}">
+                            <div class="post-meta">
+                                <div class="author-name">{{ note.user.username }}</div>
+                                <div class="post-date text-muted">{{ note.created_at|date:"M d, Y" }}</div>
+                            </div>
+                            <!-- Star and Bookmark Buttons -->
+                            <div class="ms-auto d-flex align-items-center">
+                                <button class="btn btn-md btn-star me-2 {% if note in starred_notes %}starred{% endif %}"
+                                        data-note-id="{{ note.id }}">
+                                    <i class="fas fa-star"></i>
+                                    <span class="star-count">{{ note.star_count }}</span>
+                                </button>
+                                
+                                <button class="btn btn-md btn-bookmark {% if note in bookmarked_notes %}bookmarked{% endif %}"
+                                        data-note-id="{{ note.id }}">
+                                    <i class="fas fa-bookmark"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="{% if note.get_first_content_image %}col-md-7{% else %}col-11{% endif %}">
+                                <h4 class="post-title mb-2">
+                                    <a href="{% url 'note_detail' note.id %}" class="text-dark text-decoration-none">
+                                        {{ note.title }}
+                                    </a>
+                                </h4>
+                                <p class="post-excerpt text-muted" style="font-size: 14px;">
+                                    {{ note.description|striptags|truncatechars:100 }}
+                                </p>
+                                
+                                <div class="post-footer d-flex align-items-center justify-content-between">
+                                    <div class="d-flex align-items-center">
+                                        <span class="badge category-badge category-{{ note.category|lower }} me-2">
+                                            {% if note.category == "other" %}
+                                                {{ note.other_category }}
+                                            {% else %}
+                                                {{ note.get_category_display }}
+                                            {% endif %}
+                                        </span>
+                                        <span class="text-muted">{{ note.views_count }} views</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {% with image_data=note.get_first_content_image_data %}
+                                {% if image_data.0 %}
+                                <div class="col-md-4 ms-4">
+                                    <div class="note-image-wrapper">
+                                        {% if image_data.0 == 'url' %}
+                                            <img src="{{ image_data.1 }}"
+                                                class="note-preview-image" 
+                                                alt="Preview for {{ note.title }}">
+                                        {% else %}
+                                            <img src="data:{{ image_data.0 }};base64,{{ image_data.1 }}"
+                                                class="note-preview-image" 
+                                                alt="Preview for {{ note.title }}">
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% endif %}
+                            {% endwith %}
+                        </div>
+                    </article>
+                    {% endfor %}
+                {% else %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i> No results found for "{{ query }}". Try different keywords.
+                    </div>
+                    
+                    <div class="mt-4">
+                        <h5>Suggestions:</h5>
+                        <ul>
+                            <li>Check your spelling</li>
+                            <li>Try more general keywords</li>
+                            <li>Try different keywords</li>
+                        </ul>
+                    </div>
+                {% endif %}
+                
+                <div class="mt-4">
+                    <a href="{% url 'home' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-arrow-left me-2"></i> Back to Home
+                    </a>
+                </div>
+            </div>
+
+            <!-- Enhanced Leaderboards -->
+            <div class="col-md-4" style="padding-right: 0;">
+                <!-- Most Viewed Notes -->
+                <div class="leaderboard mb-4">
+                    <div class="leaderboard-header">
+                        <i class="fas fa-crown"></i>
+                        <h5>Most Viewed</h5>
+                    </div>
+                    <div class="leaderboard-list">
+                        {% for note in most_viewed %}
+                        <a href="{% url 'note_detail' note.id %}" class="leaderboard-item">
+                            <div class="rank-badge">{{ forloop.counter }}</div>
+                            <div class="leaderboard-content">
+                                <h6 class="leaderboard-title">{{ note.title }}</h6>
+                                <div class="stats">
+                                    <span class="views">
+                                        <i class="fas fa-eye"></i>{{ note.views_count }}
+                                    </span>
+                                </div>
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Most Starred Notes -->
+                <div class="leaderboard">
+                    <div class="leaderboard-header">
+                        <i class="fas fa-award"></i>
+                        <h5>Most Starred</h5>
+                    </div>
+                    <div class="leaderboard-list">
+                        {% for note in most_starred %}
+                        <a href="{% url 'note_detail' note.id %}" class="leaderboard-item">
+                            <div class="rank-badge">{{ forloop.counter }}</div>
+                            <div class="leaderboard-content">
+                                <h6 class="leaderboard-title">{{ note.title }}</h6>
+                                <div class="stats">
+                                    <span class="stars">
+                                        <i class="fas fa-star"></i>{{ note.star_count }}
+                                    </span>
+                                </div>
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Base Styles */
+body {
+    font-family: "Poppins", serif;
+    background-color: #ffffff;
+}
+
+.main-div{
+    padding-left: 40px;
+    padding-right: 40px;
+}
+
+@media (min-width: 768px) { /* md breakpoint and up */
+    .col-md-4 .leaderboard {
+        margin-left: 6rem; /* Adds 2rem (32px) margin to the left */
+    }
+}
+
+/* Note Item Styles */
+.note-item {
+    border-bottom: 1px solid #e4e3e3;
+    padding-bottom: 2rem;
+    margin-bottom: 2rem;
+}
+
+.author-name {
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.post-title{
+    font-weight: 640;
+}
+
+.post-date {
+    font-size: 0.8rem;
+}
+
+.note-image-wrapper {
+    border-radius: 8px;
+    overflow: hidden;
+    aspect-ratio: 16/9;
+}
+
+.note-preview-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Category Badge Styles */
+.category-badge {
+    padding: 0.4em 0.8em;
+    font-size: 0.85rem;
+}
+
+.category-physics {
+    background-color: #1e4a1f; /* Darker shade of green */
+}
+
+.category-chemistry {
+    background-color: #3b7a3d; /* Medium shade of green */
+}
+
+.category-biology {
+    background-color: #5cb85c; /* Lighter shade of green */
+}
+
+.category-astronomy {
+    background-color: #2f7731; /* Original green */
+}
+
+.category-environmental_science {
+    background-color: #4cae4c; /* Another shade of green */
+}
+
+/* Technology Subcategories */
+.category-computer_science {
+    background-color: #a80808; /* Darker shade of red */
+}
+
+.category-engineering {
+    background-color: #d9534f; /* Medium shade of red */
+}
+
+.category-information_technology {
+    background-color: #ee2c09; /* Original red */
+}
+
+.category-artificial_intelligence {
+    background-color: #ff5c5c; /* Lighter shade of red */
+}
+
+.category-data_science {
+    background-color: #ff7f7f; /* Another shade of red */
+}
+
+/* Other Categories */
+.category-mathematics {
+    background-color: #9c27b0; /* Original purple */
+}
+
+.category-history {
+    background-color: #FF9800; /* Original orange */
+}
+
+.category-arts {
+    background-color: #65c923; /* Original lime green */
+}
+
+.category-literature {
+    background-color: #8bc34a; /* Lighter shade of lime green */
+}
+
+.category-business {
+    background-color: #4caf50; /* Another shade of green */
+}
+
+.category-health_wellness {
+    background-color: #81c784; /* Lighter shade of green */
+}
+
+.category-language {
+    background-color: #a5d6a7; /* Very light shade of green */
+}
+
+.category-travel_culture {
+    background-color: #ffa726; /* Lighter shade of orange */
+}
+
+.category-personal_development {
+    background-color: #ffb74d; /* Very light shade of orange */
+}
+
+.category-hobbies {
+    background-color: #ffcc80; /* Another light shade of orange */
+}
+
+.category-education {
+    background-color: #ff9800; /* Original orange */
+}
+
+.category-politics {
+    background-color: #e64a19; /* Darker shade of orange */
+}
+
+.category-philosophy {
+    background-color: #ff7043; /* Lighter shade of orange */
+}
+
+.category-psychology {
+    background-color: #ff8a65; /* Another light shade of orange */
+}
+
+.category-food_cooking {
+    background-color: #f51c93; /* Original pink */
+}
+
+.category-sports_fitness {
+    background-color: #e91e63; /* Darker shade of pink */
+}
+
+.category-entertainment {
+    background-color: #ff4081; /* Lighter shade of pink */
+}
+
+.category-design {
+    background-color: #ff79b0; /* Very light shade of pink */
+}
+
+.category-spirituality {
+    background-color: #ffa6c2; /* Another light shade of pink */
+}
+
+.category-parenting {
+    background-color: #f06292; /* Medium shade of pink */
+}
+
+.category-diy_crafts {
+    background-color: #ec407a; /* Another shade of pink */
+}
+
+.category-gaming {
+    background-color: #6a156d; /* Another shade of pink */
+}
+
+.category-other {
+    background-color: #f51c93; /* Original pink */
+}
+
+/* Action Buttons */
+.btn-bookmark {
+    background: none;
+    border: none;
+    padding: 0.25rem 0.5rem;
+    transition: transform 0.2s ease;
+}
+
+.btn-star {
+    background: none;
+    border: none;
+    color: #cac9c9;
+}
+
+.btn-star:hover{
+    color: gold;
+}
+
+.btn-star.starred {
+    color: gold;
+}
+.btn-bookmark { color: #cac9c9; }
+.btn-bookmark.bookmarked { color: black; }
+
+.btn-star:hover,
+.btn-bookmark:hover {
+    transform: scale(1.1);
+}
+
+/* Gamified Leaderboard Styles */
+.leaderboard {
+    background: linear-gradient(145deg, #2b2d42, #353957);
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    border: 1px solid #393c5f;
+    margin-bottom: 2rem;
+    position: relative;
+    overflow: hidden;
+    color: #ffffff;
+}
+
+.leaderboard::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 8px;
+    background: linear-gradient(90deg, #ffd700, #ff9500, #ff5e62);
+}
+
+.leaderboard-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.leaderboard-header h5 {
+    font-weight: 700;
+    margin: 0;
+    text-align: center;
+    font-size: 1.2rem;
+    color: #ffffff;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    background: linear-gradient(90deg, #ffd700, #ff9500);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.leaderboard-header i {
+    font-size: 1.5rem;
+    color: #ffd700;
+    margin-right: 0.5rem;
+    text-shadow: 0 2px 4px rgba(255, 215, 0, 0.3);
+}
+
+.leaderboard-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.leaderboard-item {
+    display: flex;
+    align-items: center;
+    padding: 0.8rem;
+    border-radius: 12px;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.3s ease;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid transparent;
+    position: relative;
+    overflow: hidden;
+}
+
+.leaderboard-item:hover {
+    transform: translateX(8px);
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 215, 0, 0.3);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.leaderboard-item:hover::after {
+    opacity: 1;
+    right: 0.5rem;
+}
+
+.rank-badge {
+    min-width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    margin-right: 1rem;
+    font-size: 0.9rem;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
+    color: white;
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+}
+
+.rank-badge::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #777;
+    z-index: -1;
+}
+
+/* Gold for 1st */
+.leaderboard-item:nth-child(1) .rank-badge::before {
+    background: linear-gradient(135deg, #ffd700, #ff9500);
+}
+
+/* Silver for 2nd */
+.leaderboard-item:nth-child(2) .rank-badge::before {
+    background: linear-gradient(135deg, #d4d4d4, #adadad);
+}
+
+/* Bronze for 3rd */
+.leaderboard-item:nth-child(3) .rank-badge::before {
+    background: linear-gradient(135deg, #cd7f32, #a05e1f);
+}
+
+/* Rest of ranks */
+.leaderboard-item:nth-child(n+4) .rank-badge::before {
+    background: linear-gradient(135deg, #6c757d, #495057);
+}
+
+.leaderboard-content {
+    flex: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 80%;
+}
+
+.leaderboard-title {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #ffffff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 70%;
+}
+
+.stats {
+    color: #ffffff;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.views, .stars {
+    display: flex;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 0.25rem 0.5rem;
+    border-radius: 30px;
+    font-weight: 600;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.views i, .stars i {
+    margin-right: 0.4rem;
+}
+
+.views i {
+    color: #4e9fff;
+}
+
+.stars i {
+    color: #ffd700;
+}
+
+/* Shimmer effect for rank 1 */
+.leaderboard-item:nth-child(1) {
+    position: relative;
+    overflow: hidden;
+    background: rgba(255, 215, 0, 0.15);
+    border: 1px solid rgba(255, 215, 0, 0.3);
+}
+
+.leaderboard-item:nth-child(1)::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.2),
+        transparent
+    );
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    100% {
+        left: 200%;
+    }
+}
+
+/* Special effect for rank 2 */
+.leaderboard-item:nth-child(2) {
+    background: rgba(224, 224, 224, 0.1);
+    border: 1px solid rgba(224, 224, 224, 0.2);
+}
+
+/* Special effect for rank 3 */
+.leaderboard-item:nth-child(3) {
+    background: rgba(205, 127, 50, 0.1);
+    border: 1px solid rgba(205, 127, 50, 0.2);
+}
+
+/* Search specific styles */
+.search-stats {
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Star functionality
+    document.querySelectorAll('.btn-star').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const noteId = this.getAttribute('data-note-id');
+            toggleStar(noteId);
+        });
+    });
+
+    // Bookmark functionality
+    document.querySelectorAll('.btn-bookmark').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const noteId = this.getAttribute('data-note-id');
+            const url = `/toggle-bookmark/${noteId}/`;
+            
+            fetch(url, {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': getCookie('csrftoken')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    location.reload();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        });
+    });
+});
+
+// Star toggle function
+function toggleStar(noteId) {
+    fetch(`/toggle-star/${noteId}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    }).then(response => {
+        if (response.ok) {
+            location.reload();
+        }
+    });
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %}

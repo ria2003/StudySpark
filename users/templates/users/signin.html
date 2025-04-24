@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% load socialaccount %}
+{% block title %}Login - StudySpark{% endblock %}
+
+{% block content %}
+<!-- Add this right after the container div in both forms -->
+
+<div class="container" style="margin-top: 50px; margin-bottom: 20px;">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="login-container shadow-lg rounded-3 p-4">
+                <h2 class="text-center mb-4">Login to StudySpark</h2>
+                
+                <form method="post" action="{% url 'login' %}" id="loginForm">
+                    {% csrf_token %}
+                    {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{% if message.tags %}{{ message.tags }}{% else %}info{% endif %} alert-dismissible fade show" style="margin-bottom: 10px;">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                    {% endif %}
+                    <div class="mb-3">
+                        <input type="text" name="username" class="form-control" placeholder="Username" required>
+                    </div>
+                    <div class="mb-3">
+                        <input type="password" name="password" class="form-control" placeholder="Password" required>
+                    </div>
+                    <div class="mb-3 d-flex justify-content-between align-items-center">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" id="rememberMe" name="remember_me">
+                            <label class="form-check-label" for="rememberMe">Remember me</label>
+                        </div>
+                        <a href="#" class="text-primary">Forgot Password?</a>
+                    </div>
+                    <button type="submit" class="btn w-100" style="background: linear-gradient(45deg, #176be9, #042e6d); color: white;">Sign In</button>
+                    <div class="text-center mt-3">
+                        <p>or</p>
+                        <a href="{% provider_login_url 'google' %}" class="btn btn-outline-danger w-100">
+                            <i class="fab fa-google"></i> Login with Google
+                        </a>
+                    </div>
+                    <div class="text-center mt-3">
+                        <p style="margin: 0;">Don't have an account? <a href="{% url 'register' %}" class="text-primary">Sign Up</a></p>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    body {
+        font-family: "Poppins", serif;
+        font-weight: 400;
+        font-style: normal;
+    }
+
+    .login-container {
+        background: white;
+        border-radius: 10px;
+        padding: 30px;
+    }
+
+    .btn-outline-danger {
+        border-color: #dc3545;
+        color: #dc3545;
+        transition: all 0.3s ease;
+    }
+
+    .btn-outline-danger:hover {
+        background-color: #dc3545;
+        color: white;
+    }
+
+    .form-control:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+    }
+</style>
+{% endblock %}

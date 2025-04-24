@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container my-4">
+    <h2>Your Followers</h2>
+    
+    <div class="card mt-4">
+        {% if followers %}
+            <ul class="list-group list-group-flush">
+                {% for follow in followers %}
+                    <li class="list-group-item d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center">
+                            <img src="{{ follow.follower.profile_pic.url }}" 
+                                 class="rounded-circle me-3" 
+                                 width="50" height="50" 
+                                 alt="{{ follow.follower.username }}">
+                            <div>
+                                <h5 class="mb-1">
+                                    <a href="{% url 'user_profile_view' follow.follower.id %}" class="text-decoration-none">
+                                        {{ follow.follower.username }}
+                                    </a>
+                                </h5>
+                                <p class="text-muted small mb-0">Following you since {{ follow.created_at|date:"M d, Y" }}</p>
+                            </div>
+                        </div>
+                        <div>
+                            {% if follow.follower in user.following.all %}
+                                <span class="badge bg-success">
+                                    <i class="fas fa-sync"></i> You follow each other
+                                </span>
+                            {% else %}
+                                <button class="btn btn-sm btn-primary follow-btn" data-user-id="{{ follow.follower.id }}">
+                                    <i class="fas fa-user-plus"></i> Follow Back
+                                </button>
+                            {% endif %}
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <div class="card-body text-center my-4">
+                <div class="empty-state">
+                    <i class="fas fa-user-friends fa-3x text-muted mb-3"></i>
+                    <h4>No followers yet</h4>
+                    <p class="text-muted">When people follow you, you'll see them here.</p>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Find all follow buttons on the page
+    const followButtons = document.querySelectorAll('.follow-btn');
+    
+    // Add click event listener to each follow button
+    followButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            // Get the user ID from the button's data attribute
+            const userId = this.getAttribute('data-user-id');
+            
+            // Send AJAX request to follow the user
+            fetch(`/follow/${userId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': getCookie('csrftoken')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.is_following) {
+                    // Replace the button with "You follow each other" badge
+                    this.outerHTML = `
+                        <span class="badge bg-success">
+                            <i class="fas fa-sync"></i> You follow each other
+                        </span>
+                    `;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to follow user. Please try again.');
+            });
+        });
+    });
+    
+    // Function to get CSRF token from cookies
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+});
+</script>
+{% endblock %}

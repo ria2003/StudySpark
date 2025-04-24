@@ -1,0 +1,506 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container my-2 mb-4" style="padding: 0px;" >
+    <h1 class="mb-4 text-center">My Notes</h1>
+
+    <!-- Filter Section -->
+    <div class="filter-section mb-4">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="row g-3 justify-content-center mb-4">
+                    <div class="col-md-4">
+                        <select id="categoryFilter" class="form-select">
+                            <option value="">All Categories</option>
+                            <option value="physics">Physics</option>
+                            <option value="chemistry">Chemistry</option>
+                            <option value="biology">Biology</option>
+                            <option value="astronomy">Astronomy</option>
+                            <option value="environmental_science">Environmental Science</option>
+                            <option value="computer_science">Computer Science</option>
+                            <option value="engineering">Engineering</option>
+                            <option value="information_technology">Information Technology</option>
+                            <option value="artificial_intelligence">Artificial Intelligence</option>
+                            <option value="data_science">Data Science</option>
+                            <option value="mathematics">Mathematics</option>
+                            <option value="history">History</option>
+                            <option value="arts">Arts</option>
+                            <option value="literature">Literature</option>
+                            <option value="business">Business</option>
+                            <option value="health_wellness">Health & Wellness</option>
+                            <option value="language">Language</option>
+                            <option value="travel_culture">Travel & Culture</option>
+                            <option value="personal_development">Personal Development</option>
+                            <option value="hobbies">Hobbies</option>
+                            <option value="education">Education</option>
+                            <option value="politics">Politics</option>
+                            <option value="philosophy">Philosophy</option>
+                            <option value="psychology">Psychology</option>
+                            <option value="food_cooking">Food & Cooking</option>
+                            <option value="sports_fitness">Sports & Fitness</option>
+                            <option value="entertainment">Entertainment</option>
+                            <option value="design">Design</option>
+                            <option value="spirituality">Spirituality</option>
+                            <option value="parenting">Parenting</option>
+                            <option value="diy_crafts">DIY & Crafts</option>
+                            <option value="gaming">Gaming</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <select id="visibilityFilter" class="form-select">
+                            <option value="">All Notes</option>
+                            <option value="public">Public</option>
+                            <option value="private">Private</option>
+                        </select>
+                    </div>
+
+                    <!-- Bookmarked Notes Filter -->
+                    <div class="col-md-4">
+                        <button id="bookmarkFilter" class="btn btn-outline-primary w-100">
+                            <i class="fas fa-bookmark me-2"></i>Bookmarked Notes
+                        </button>
+                    </div>
+                </div>
+            </div>
+    
+    <div class="notes-grid mt-1">
+        {% for note in notes %}
+        <div class="note-card" 
+             data-category="{{ note.category }}"
+             data-visibility="{% if note.is_public %}public{% else %}private{% endif %}">
+            <div class="note-header d-flex justify-content-between align-items-center">
+                <span class="badge category-badge category-{{ note.category }}">
+                    {% if note.category == "other" %}
+                        {{ note.other_category }}
+                    {% else %}
+                        {{ note.get_category_display }}
+                    {% endif %}
+                </span>
+                
+                <div class="note-actions">
+                    <button class="btn btn-star {% if note.stars.exists %}starred{% endif %}" 
+                data-note-id="{{ note.id }}">
+                <i class="fas fa-star"></i>
+                <span class="star-count ps-1">{{ note.stars.count }}</span>
+                </button>
+
+                <a href="{% url 'toggle_bookmark' note.id %}" class="btn btn-bookmark {% if note in bookmarked_notes %}bookmarked{% endif %}">
+                    <i class="fas fa-bookmark"></i>
+                </a>
+                </div>
+            </div>
+            
+            <a href="{% url 'note_detail' note.id %}" style="text-decoration: none;">
+                <h3 class="note-title mt-1 text-dark">{{ note.title|truncatechars:45 }}</h3>
+            </a>
+            <p class="note-excerpt" style="margin-bottom: 12px; color: #64748b;">{{ note.description|truncatechars:100 }}</p>
+            
+            <div class="note-metadata d-flex justify-content-between align-items-center">
+                <small class="text-muted" style="font-size: 13px;">
+                    {{ note.created_at|timesince }} ago
+                    <span class="ms-2">
+                        {% if note.is_public %}
+                        <i class="fas fa-globe" title="Public"></i>
+                        {% else %}
+                        <i class="fas fa-lock" title="Private"></i>
+                        {% endif %}
+                    </span>
+                </small>
+
+                <div class="note-stats">
+                    <span class="me-2">
+                        <i class="fas fa-eye"></i> {{ note.views_count }}
+                    </span>
+                    <span>
+                        <i class="fas fa-comment"></i> {{ note.comment_count }}
+                    </span>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="alert alert-info w-100 text-center">
+            You haven't created any notes yet. 
+            <a href="{% url 'create_post' %}" class="alert-link w-100 text-center">Create your first note!</a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+body{
+        font-family: "Poppins", serif;
+  font-weight: 400;
+  font-style: normal;
+  background-color: #ffffff;
+}
+.notes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.6rem;
+    
+}
+
+.note-card {
+    background: white;
+    border-radius: 10px;
+    padding: 1.4rem;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 10px 15px rgba(0, 0, 0, 0.247);
+}
+
+.note-card:hover {
+    transform: scale(1.03);
+}
+
+.btn-star {
+    background: none;
+    border: none;
+    color: #cac9c9;
+}
+
+.btn-star:hover{
+    color: gold;
+}
+
+.btn-star.starred {
+    color: gold;
+}
+
+
+.creative-btn {
+    position: relative;
+    overflow: hidden;
+    border: none;
+    transition: all 0.3s ease;
+    color: white;
+}
+
+.creative-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(120deg, transparent, rgba(255,255,255,0.3), transparent);
+    transition: all 0.3s ease;
+    color: white;
+}
+
+.creative-btn:hover::before {
+    left: 100%;
+    color: white;
+}
+
+.creative-summarize {
+    background: linear-gradient(45deg, #73038f, #3841eb);
+    border: none;
+    color: white;
+}
+
+.creative-quiz {
+    background: linear-gradient(45deg, #73038f, #3841eb);
+    border: none;
+    color: white;
+}
+
+.creative-empty-state {
+    background: linear-gradient(to right, #6a11cb 0%, #2575fc 100%);
+    color: white;
+    text-align: center;
+    padding: 2rem;
+    border-radius: 15px;
+}
+
+/* Category badge styles */
+.category-badge {
+    padding: 0.5em 1em;
+    
+}
+
+.category-physics {
+    background-color: #1e4a1f; /* Darker shade of green */
+}
+
+.category-chemistry {
+    background-color: #3b7a3d; /* Medium shade of green */
+}
+
+.category-biology {
+    background-color: #5cb85c; /* Lighter shade of green */
+}
+
+.category-astronomy {
+    background-color: #2f7731; /* Original green */
+}
+
+.category-environmental_science {
+    background-color: #4cae4c; /* Another shade of green */
+}
+
+/* Technology Subcategories */
+.category-computer_science {
+    background-color: #a80808; /* Darker shade of red */
+}
+
+.category-engineering {
+    background-color: #d9534f; /* Medium shade of red */
+}
+
+.category-information_technology {
+    background-color: #ee2c09; /* Original red */
+}
+
+.category-artificial_intelligence {
+    background-color: #ff5c5c; /* Lighter shade of red */
+}
+
+.category-data_science {
+    background-color: #ff7f7f; /* Another shade of red */
+}
+
+/* Other Categories */
+.category-mathematics {
+    background-color: #9c27b0; /* Original purple */
+}
+
+.category-history {
+    background-color: #FF9800; /* Original orange */
+}
+
+.category-arts {
+    background-color: #65c923; /* Original lime green */
+}
+
+.category-literature {
+    background-color: #8bc34a; /* Lighter shade of lime green */
+}
+
+.category-business {
+    background-color: #4caf50; /* Another shade of green */
+}
+
+.category-health_wellness {
+    background-color: #81c784; /* Lighter shade of green */
+}
+
+.category-language {
+    background-color: #a5d6a7; /* Very light shade of green */
+}
+
+.category-travel_culture {
+    background-color: #ffa726; /* Lighter shade of orange */
+}
+
+.category-personal_development {
+    background-color: #ffb74d; /* Very light shade of orange */
+}
+
+.category-hobbies {
+    background-color: #ffcc80; /* Another light shade of orange */
+}
+
+.category-education {
+    background-color: #ff9800; /* Original orange */
+}
+
+.category-politics {
+    background-color: #e64a19; /* Darker shade of orange */
+}
+
+.category-philosophy {
+    background-color: #ff7043; /* Lighter shade of orange */
+}
+
+.category-psychology {
+    background-color: #ff8a65; /* Another light shade of orange */
+}
+
+.category-food_cooking {
+    background-color: #f51c93; /* Original pink */
+}
+
+.category-sports_fitness {
+    background-color: #e91e63; /* Darker shade of pink */
+}
+
+.category-entertainment {
+    background-color: #ff4081; /* Lighter shade of pink */
+}
+
+.category-design {
+    background-color: #ff79b0; /* Very light shade of pink */
+}
+
+.category-spirituality {
+    background-color: #ffa6c2; /* Another light shade of pink */
+}
+
+.category-parenting {
+    background-color: #f06292; /* Medium shade of pink */
+}
+
+.category-diy_crafts {
+    background-color: #ec407a; /* Another shade of pink */
+}
+
+.category-gaming {
+    background-color: #6a156d; /* Another shade of pink */
+}
+
+.category-other {
+    background-color: #f51c93; /* Original pink */
+}
+
+/* Hide filtered out cards */
+.note-card.hidden {
+    display: none;
+}
+
+.btn-bookmark {
+    background: none;
+    border: none;
+    padding: 0.25rem 0.5rem;
+    transition: transform 0.2s ease;
+}
+
+.btn-bookmark { color: #cac9c9; }
+.btn-bookmark.bookmarked { color: black; }
+
+.btn-bookmark:hover {
+    transform: scale(1.1);
+}
+
+#bookmarkFilter {
+    transition: all 0.3s ease;
+}
+
+#bookmarkFilter.active {
+    background-color: #0d6efd;
+    color: white;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const starButtons = document.querySelectorAll('.btn-star');
+    
+    starButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const noteId = this.getAttribute('data-note-id');
+            toggleStar(noteId);
+        });
+    });
+
+    // Filter functionality
+    const categoryFilter = document.getElementById('categoryFilter');
+    const visibilityFilter = document.getElementById('visibilityFilter');
+    const noteCards = document.querySelectorAll('.note-card');
+
+    function applyFilters() {
+        const selectedCategory = categoryFilter.value;
+        const selectedVisibility = visibilityFilter.value;
+
+        noteCards.forEach(card => {
+            const categoryMatch = !selectedCategory || card.dataset.category === selectedCategory;
+            const visibilityMatch = !selectedVisibility || card.dataset.visibility === selectedVisibility;
+            
+            if (categoryMatch && visibilityMatch) {
+                card.classList.remove('hidden');
+            } else {
+                card.classList.add('hidden');
+            }
+        });
+    }
+
+    categoryFilter.addEventListener('change', applyFilters);
+    visibilityFilter.addEventListener('change', applyFilters);
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Bookmark filter functionality
+    const bookmarkFilter = document.getElementById('bookmarkFilter');
+    const noteCards = document.querySelectorAll('.note-card');
+    let bookmarkFilterActive = false;
+
+    bookmarkFilter.addEventListener('click', function() {
+        bookmarkFilterActive = !bookmarkFilterActive;
+        this.classList.toggle('active');
+        
+        noteCards.forEach(card => {
+            const isBookmarked = card.querySelector('.btn-bookmark').classList.contains('bookmarked');
+            if (bookmarkFilterActive) {
+                card.classList.toggle('hidden', !isBookmarked);
+            } else {
+                card.classList.remove('hidden');
+            }
+        });
+    });
+
+    // Bookmark toggle functionality
+    document.querySelectorAll('.btn-bookmark').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const url = this.getAttribute('href');
+            
+            fetch(url, {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': getCookie('csrftoken')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // Toggle the bookmarked class
+                    this.classList.toggle('bookmarked');
+                    
+                    // If bookmark filter is active, handle card visibility
+                    if (bookmarkFilterActive) {
+                        const noteCard = this.closest('.note-card');
+                        if (!data.is_bookmarked) {
+                            noteCard.classList.add('hidden');
+                        }
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        });
+    });
+});
+
+function toggleStar(noteId) {
+    fetch(`/toggle-star/${noteId}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    }).then(response => {
+        if (response.ok) {
+            location.reload();
+        }
+    });
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %}

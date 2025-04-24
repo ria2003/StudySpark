@@ -1,0 +1,373 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Note - StudySpark{% endblock %}
+
+{% block content %}
+<div class="edit-note-container">
+    <div class="container py-4 px-0">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card shadow-lg border-0">
+                    <div class="card-header bg-primary text-white text-center py-4">
+                        <h2 class="mb-0"><i class="fas fa-edit me-2"></i>Edit Your Note</h2>
+                        <p class="mb-0 mt-2">Update your knowledge sharing</p>
+                    </div>
+                    
+                    <div class="card-body p-4">
+                        <form method="POST" enctype="multipart/form-data" id="editNoteForm">
+                            {% csrf_token %}
+                            {% if messages %}
+                            <div class="messages">
+                                {% for message in messages %}
+                                    <div class="alert {% if message.tags %}alert-{{ message.tags }}{% else %}alert-info{% endif %} alert-dismissible fade show" role="alert">
+                                        {{ message }}
+                                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                    </div>
+                                {% endfor %}
+                            </div> 
+                            {% endif %}
+
+                            <div class="mb-4">
+                                <label class="form-label fw-bold"><i class="fas fa-heading me-2"></i>Title</label>
+                                {{ form.title }}
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label fw-bold"><i class="fas fa-folder me-2"></i>Category</label>
+                                {{ form.category }}
+                                {{ form.other_category }}
+                                {% if form.other_category.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.other_category.errors.0 }}
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label fw-bold"><i class="fas fa-align-left me-2"></i>Description</label>
+                                {{ form.description }}
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">
+                                    <i class="fas fa-edit me-2"></i>Main Content
+                                    <small class="text-muted">(Optional: Add detailed notes, formatting, and images)</small>
+                                </label>
+                                {{ form.main_content }}
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">
+                                    <i class="fas fa-file-upload me-2"></i>Upload Files
+                                    <small class="text-muted">(PDF, DOCX, PPT, Images)</small>
+                                </label>
+                                <input type="file" name="files" multiple class="form-control">
+                                <div id="filePreview" class="mt-2 d-flex flex-wrap gap-2">
+                                    {% for file in files %}
+                                    <div class="preview-item" data-file-id="{{ file.id }}">
+                                        <div class="file-preview">
+                                            {% if 'image/' in file.file_type %}
+                                            <img src="data:{{ file.file_type }};base64,{{ file.get_base64_preview }}" alt="{{ file.filename }}" style="width: 50px; height: 50px; object-fit: cover;">
+                                            {% else %}
+                                            <i class="fas fa-file fa-2x text-primary"></i>
+                                            {% endif %}
+                                            <div>
+                                                <div>{{ file.filename }}</div>
+                                                <small class="text-muted">{{ file.file_size|filesizeformat }}</small>
+                                            </div>
+                                            <button type="button" class="remove-file" onclick="removeFile('{{ file.id }}')">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label fw-bold"><i class="fas fa-tags me-2"></i>Tags</label>
+                                {{ form.tags }}
+                            </div>
+
+                            <div class="mb-4">
+                                <div class="form-check form-switch">
+                                    {{ form.is_public }}
+                                    <label class="form-check-label">Make this note public</label>
+                                </div>
+                            </div>
+
+                            
+                            <div class="d-flex justify-content-between">
+                                <a href="{% url 'note_detail' note.id %}" class="btn btn-secondary py-2 px-4">
+                                    <i class="fas fa-arrow-left me-2"></i>Cancel
+                                </a>
+                                <button type="submit" class="btn btn-primary py-2 px-4">
+                                    <i class="fas fa-save me-2"></i>Save Changes
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+body {
+    font-family: "Poppins", serif;
+    font-weight: 400;
+    font-style: normal;
+}
+
+.edit-note-container {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    min-height: 100vh;
+    margin-bottom: 20px;
+}
+
+.card {
+    border-radius: 15px;
+    overflow: hidden;
+}
+
+.card-header {
+    background: linear-gradient(45deg, #4e54c8, #8f94fb);
+}
+
+.form-control:not(.search-input), .form-select {
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+    padding: 12px;
+    transition: all 0.3s;
+}
+
+.form-control:focus, .form-select:focus {
+    box-shadow: 0 0 0 0.25rem rgba(78, 84, 200, 0.25);
+}
+
+.btn-primary {
+    background: linear-gradient(45deg, #4e54c8, #8f94fb);
+    border: none;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(78, 84, 200, 0.4);
+}
+
+.btn-secondary {
+    background: #6c757d;
+    border: none;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.btn-secondary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+#filePreview img {
+    width: 100px;
+    height: 100px;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+.preview-item {
+    position: relative;
+    margin: 10px;
+}
+
+.remove-file {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    background: #ff4444;
+    color: white;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border: 2px solid white;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.file-preview {
+    border: 1px solid #dee2e6;
+    padding: 10px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: white;
+}
+
+[name="other_category"] {
+    margin-top: 10px;
+    transition: all 0.3s ease;
+}
+
+[name="other_category"].show {
+    display: block;
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.messages .alert {
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+}
+
+.messages .alert-success {
+    color: #155724;
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+}
+
+.messages .alert-error {
+    color: #721c24;
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+}
+
+.messages .btn-close{
+    padding: 15px;
+}
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const fileInput = document.querySelector('input[type="file"]');
+        const previewDiv = document.getElementById('filePreview');
+        const uploadedFiles = new Map();
+
+        const categorySelect = document.querySelector('select[name="category"]');
+        const otherField = document.querySelector('input[name="other_category"]');
+        
+        // Set the initial state of the 'other_category' field
+        if (categorySelect.value === 'other') {
+            otherField.style.display = 'block';
+            otherField.setAttribute('required', 'required');
+        } else {
+            otherField.style.display = 'none';
+            otherField.removeAttribute('required');
+        }
+        
+        categorySelect.addEventListener('change', function() {
+            if (this.value === 'other') {
+                otherField.style.display = 'block';
+                otherField.setAttribute('required', 'required');  // Make it required if "Other" is selected
+            } else {
+                otherField.style.display = 'none';
+                otherField.removeAttribute('required');  // Remove required attribute if not needed
+            }
+        });
+    
+        fileInput.addEventListener('change', function() {
+            [...this.files].forEach(file => {
+                const fileId = 'new_' + Date.now() + Math.random().toString(36).substr(2, 9);
+                uploadedFiles.set(fileId, file);
+                
+                const previewItem = document.createElement('div');
+                previewItem.className = 'preview-item';
+                previewItem.dataset.fileId = fileId;
+    
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = e => {
+                        previewItem.innerHTML = `
+                            <div class="file-preview">
+                                <img src="${e.target.result}" alt="${file.name}" style="width: 50px; height: 50px; object-fit: cover;">
+                                <div>
+                                    <div>${file.name}</div>
+                                    <small class="text-muted">${formatFileSize(file.size)}</small>
+                                </div>
+                                <button type="button" class="remove-file" onclick="removeFile('${fileId}')">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        `;
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    previewItem.innerHTML = `
+                        <div class="file-preview">
+                            <i class="fas fa-file fa-2x text-primary"></i>
+                            <div>
+                                <div>${file.name}</div>
+                                <small class="text-muted">${formatFileSize(file.size)}</small>
+                            </div>
+                            <button type="button" class="remove-file" onclick="removeFile('${fileId}')">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    `;
+                }
+                previewDiv.appendChild(previewItem);
+            });
+        });
+    
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+    
+        window.removeFile = function(fileId) {
+            const element = document.querySelector(`[data-file-id="${fileId}"]`);
+            if (element) {
+                element.remove();
+                uploadedFiles.delete(fileId);
+                
+                // If this is an existing file (has a database ID)
+                if (!fileId.startsWith('new_')) {
+                    fetch('/remove-file/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': getCookie('csrftoken')
+                        },
+                        body: JSON.stringify({ file_id: fileId })
+                    });
+                }
+            }
+        };
+    
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    });
+</script>
+{% endblock %}

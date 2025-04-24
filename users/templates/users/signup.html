@@ -1,0 +1,268 @@
+{% extends 'base.html' %}
+
+{% block title %}Sign Up - StudySpark{% endblock %}
+
+{% block content %}
+<div class="container" style="margin-top: 40px; margin-bottom: 20px;">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="signup-container shadow-lg rounded-3 p-4">
+                <div class="progress-container text-center mb-3">
+                    <span class="progress-dot active" data-step="1"></span>
+                    <span class="progress-dot" data-step="2"></span>
+                    <span class="progress-dot" data-step="3"></span>
+                </div>
+
+                <form method="post" action="{% url 'register' %}" id="signupForm" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <!-- Display messages -->
+                    {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{% if message.tags %}{{ message.tags }}{% else %}info{% endif %} alert-dismissible fade show">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                    {% endif %}
+
+                    <!-- Personal Details Section -->
+                    <div class="form-section active" data-step="1">
+                        <h2 class="text-center mb-4">Personal Details</h2>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <input type="text" name="first_name" class="form-control" placeholder="First Name" value="{{ form.first_name.value|default:'' }}" required>
+                                {% if form.first_name.errors %}
+                                <div class="text-danger">{{ form.first_name.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <input type="text" name="last_name" class="form-control" placeholder="Last Name" value="{{ form.last_name.value|default:'' }}" required>
+                                {% if form.last_name.errors %}
+                                <div class="text-danger">{{ form.last_name.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <input type="text" name="username" class="form-control" placeholder="Username" value="{{ form.username.value|default:'' }}" required>
+                            {% if form.username.errors %}
+                            <div class="text-danger">{{ form.username.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            <input type="email" name="email" class="form-control" placeholder="Email Address" value="{{ form.email.value|default:'' }}" required>
+                            {% if form.email.errors %}
+                            <div class="text-danger my-1">{{ form.email.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            <input type="password" name="password1" class="form-control" placeholder="Password" required>
+                            {% if form.password1.errors %}
+                            <div class="text-danger my-1">{{ form.password1.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            <input type="password" name="password2" class="form-control" placeholder="Confirm Password" required>
+                            {% if form.password2.errors %}
+                            <div class="text-danger my-1">{{ form.password2.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <button type="button" class="btn btn-primary w-100 next-step">Next</button>
+                    </div>
+
+                    <!-- About Me Section (previously Additional Details) -->
+                    <div class="form-section" data-step="2">
+                        <h2 class="text-center mb-4">About Me</h2>
+                        <div class="mb-3">
+                            <textarea name="about_me" class="form-control" rows="4" placeholder="Tell us about yourself...">{{ form.about_me.value|default:'' }}</textarea>
+                            <small class="text-muted">Share a bit about your background, interests, and goals</small>
+                            {% if form.about_me.errors %}
+                            <div class="text-danger">{{ form.about_me.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Select Your Interests</label>
+                            <div class="interests-grid">
+                                {% for choice in form.interests.field.choices %}
+                                <div>
+                                    <input type="checkbox" id="id_interests_{{ forloop.counter }}" class="interest-checkbox" name="interests" value="{{ choice.0 }}" 
+                                    {% if choice.0 in form.interests.value %}checked{% endif %}>
+                                    <label for="id_interests_{{ forloop.counter }}" class="interest-label">{{ choice.1 }}</label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% if form.interests.errors %}
+                            <div class="text-danger">{{ form.interests.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="d-flex gap-3">
+                            <button type="button" class="btn btn-secondary flex-grow-1 prev-step">Back</button>
+                            <button type="button" class="btn btn-primary flex-grow-1 next-step">Next</button>
+                        </div>
+                    </div>
+
+                    <!-- Profile Picture Section (Step 3) -->
+                    <div class="form-section" data-step="3">
+                        <h2 class="text-center mb-4">Profile Picture</h2>
+                        <div class="text-center mb-4">
+                            <div class="profile-icon-container">
+                                <i class="fas fa-user-circle fa-5x text-muted"></i>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Upload Profile Picture (Optional)</label>
+                            <input type="file" name="profile_pic" class="form-control" accept="image/*">
+                            <small class="text-muted">Maximum file size: 5MB. Supported formats: JPG, PNG</small>
+                            {% if form.profile_pic.errors %}
+                            <div class="text-danger">{{ form.profile_pic.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="d-flex gap-3">
+                            <button type="button" class="btn btn-secondary flex-grow-1 prev-step">Back</button>
+                            <button type="submit" class="btn btn-primary flex-grow-1">Complete Sign Up</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Keep your original CSS unchanged -->
+<style>
+    body {
+        font-family: "Poppins", serif;
+        font-weight: 400;
+        font-style: normal;
+    }
+
+    .progress-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .progress-dot {
+        width: 12px;
+        height: 12px;
+        background-color: #e0e0e0;
+        border-radius: 50%;
+        transition: all 0.3s ease;
+    }
+
+    .progress-dot.active {
+        background-color: #007bff;
+        width: 16px;
+        height: 16px;
+    }
+
+    .form-section {
+        display: none;
+    }
+
+    .form-section.active {
+        display: block;
+        animation: fadeIn 0.5s;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    .interests-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+
+    .interest-checkbox {
+        display: none;
+    }
+
+    .interest-label {
+        display: block;
+        padding: 10px;
+        text-align: center;
+        border: 2px solid #e0e0e0;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .interest-checkbox:checked + .interest-label {
+        background-color: #007bff;
+        color: white;
+        border-color: #007bff;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const form = document.getElementById('signupForm');
+        const formSections = document.querySelectorAll('.form-section');
+        const progressDots = document.querySelectorAll('.progress-dot');
+        const nextStepButtons = document.querySelectorAll('.next-step');
+        const prevStepButtons = document.querySelectorAll('.prev-step');
+
+        nextStepButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const currentSection = button.closest('.form-section');
+                const currentStep = parseInt(currentSection.dataset.step);
+                const nextSection = document.querySelector(`.form-section[data-step="${currentStep + 1}"]`);
+                const nextDot = document.querySelector(`.progress-dot[data-step="${currentStep + 1}"]`);
+
+                const inputs = currentSection.querySelectorAll('input, select, textarea');
+                const isValid = Array.from(inputs).every(input => {
+                    // Skip validation for interests checkboxes and textarea (which are optional)
+                    if (input.type === 'checkbox' || input.name === 'about_me') return true;
+                    return input.checkValidity();
+                });
+
+                if (isValid) {
+                    currentSection.classList.remove('active');
+                    nextSection.classList.add('active');
+                    progressDots.forEach(dot => dot.classList.remove('active'));
+                    nextDot.classList.add('active');
+                } else {
+                    inputs.forEach(input => {
+                        if (input.type !== 'checkbox' && input.name !== 'about_me') {
+                            input.reportValidity();
+                        }
+                    });
+                }
+            });
+        });
+
+        prevStepButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const currentSection = button.closest('.form-section');
+                const currentStep = parseInt(currentSection.dataset.step);
+                const prevSection = document.querySelector(`.form-section[data-step="${currentStep - 1}"]`);
+                const prevDot = document.querySelector(`.progress-dot[data-step="${currentStep - 1}"]`);
+
+                currentSection.classList.remove('active');
+                prevSection.classList.add('active');
+                progressDots.forEach(dot => dot.classList.remove('active'));
+                prevDot.classList.add('active');
+            });
+        });
+
+        // Profile picture preview
+        document.querySelector('input[name="profile_pic"]').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                const profileIconContainer = document.querySelector('.profile-icon-container');
+                profileIconContainer.innerHTML = `<img src="${e.target.result}" class="rounded-circle" style="width: 120px; height: 120px; object-fit: cover;">`;
+            }
+            
+            if (file) {
+                reader.readAsDataURL(file);
+            }
+        });
+    });
+</script>
+{% endblock %}

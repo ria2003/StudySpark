@@ -1,0 +1,363 @@
+{% extends 'base.html' %}
+
+{% block title %}StudySpark - Ignite Your Learning Journey{% endblock %}
+
+{% block content %}
+<div class="hero-section text-light position-relative overflow-hidden py-5 mb-4">
+    <div class="container position-relative z-1">
+        <div class="row align-items-center">
+            <div class="col-md-8 mx-auto text-center">
+                <h1 class="display-3 mb-3 animate__animated animate__fadeInDown" style="font-weight: 400;">
+                    <span class="text-primary">Study</span>Spark
+                </h1>
+                <p class="lead mb-4 text-center w-100 " style="white-space: nowrap;">
+                    Share Knowledge, Learn Together, Grow Smarter
+                </p>
+                <div class="d-flex justify-content-center gap-3 mb-3 animate__animated animate__fadeInUp">
+                    <a href="{% url 'register' %}" class="btn btn-primary btn-lg shadow-lg pulse-animation">
+                        Join Today <i class="fas fa-bolt ms-2"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Creative Background Elements -->
+    <div class="hero-background-shapes">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+        <div class="shape shape-3"></div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="row g-4 mb-5">
+        <div class="col-md-4">
+            <div class="card h-100 card-hover transform-on-hover">
+                <div class="card-body text-center p-4">
+                    <div class="feature-icon mb-3">
+                        <i class="fas fa-share-alt fa-3x text-primary"></i>
+                        <div class="icon-badge">1</div>
+                    </div>
+                    <h3 class="card-title h4 mb-3">Knowledge Sharing</h3>
+                    <p class="card-text text-muted">
+                        Create and share interactive study notes with the community. Learn from others and contribute your expertise.
+                    </p>
+                    
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 card-hover transform-on-hover">
+                <div class="card-body text-center p-4">
+                    <div class="feature-icon mb-3">
+                        <i class="fas fa-brain fa-3x text-primary"></i>
+                        <div class="icon-badge">2</div>
+                    </div>
+                    <h3 class="card-title h4 mb-3">AI Summarizer & Quiz</h3>
+                    <p class="card-text text-muted">
+                        Transform lengthy content into concise summaries and generate personalized quizzes to test your understanding.
+                    </p>
+                    
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 card-hover transform-on-hover">
+                <div class="card-body text-center p-4">
+                    <div class="feature-icon mb-3">
+                        <i class="fas fa-headphones fa-3x text-primary"></i>
+                        <div class="icon-badge">3</div>
+                    </div>
+                    <h3 class="card-title h4 mb-3">Audio Notes</h3>
+                    <p class="card-text text-muted">
+                        Learn on the go with audio versions of study materials. Record, listen, and absorb knowledge whenever and wherever.
+                    </p>
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-5">
+        <div class="col-md-12">
+            <div class="section-header text-center mb-5">
+                <h2 class="display-6 mb-3" style="font-weight: 500;">Explore Recent Knowledge Sparks</h2>
+                <p class="lead text-muted">Latest shared notes from our community of learners</p>
+            </div>
+            
+            <!-- Fixed grid layout -->
+            <div class="row row-cols-1 row-cols-md-3 g-5">
+                {% for note in last_three_posts %}
+                <div class="col">
+                    <div class="note-card h-100" style="background: rgb(255, 253, 251);">
+                        <div class="note-header d-flex justify-content-between align-items-center">
+                            <span class="badge category-badge category-{{ note.category }}">
+                                {% if note.category == "other" %}
+                                    {{ note.other_category }}
+                                {% else %}
+                                    {{ note.get_category_display }}
+                                {% endif %}
+                            </span>
+                            
+                            <div class="note-actions">
+                                <a href="{% url 'login' %}" class="btn btn-star">
+                                    <i class="fas fa-star"></i>
+                                    <span class="star-count ps-1">{{ note.stars.count }}</span>
+                                </a>
+    
+                                <a href="{% url 'login' %}" class="btn btn-bookmark">
+                                    <i class="fas fa-bookmark"></i>
+                                </a>
+                            </div>
+                        </div>
+                        
+                        <a href="{% url 'register' %}" style="text-decoration: none;">
+                            <h3 class="note-title mt-1 text-dark">{{ note.title|truncatechars:45 }}</h3>
+                        </a>
+                        <p class="note-excerpt" style="margin-bottom: 12px; color: #64748b;">{{ note.description|truncatechars:100 }}</p>
+                        
+                        <div class="note-metadata d-flex justify-content-between align-items-center mt-auto">
+                            <small class="text-muted" style="font-size: 13px;">
+                                {{ note.created_at|timesince }} ago
+                                <span class="ms-2">
+                                    {% if note.is_public %}
+                                    <i class="fas fa-globe" title="Public"></i>
+                                    {% else %}
+                                    <i class="fas fa-lock" title="Private"></i>
+                                    {% endif %}
+                                </span>
+                            </small>
+    
+                            <div class="note-stats">
+                                <span class="me-2">
+                                    <i class="fas fa-eye"></i> {{ note.views_count }}
+                                </span>
+                                <span>
+                                    <i class="fas fa-comment"></i> {{ note.comment_count }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-12 text-center">
+                    <p>No notes available yet. <a href="{% url 'register' %}">Join today</a> to be the first to share your knowledge!</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mb-5">
+        <div class="col-md-8 mx-auto text-center">
+            <div class="cta-box p-5 rounded shadow-sm mt-4">
+                <h2 class="mb-4">Ready to enhance your learning experience?</h2>
+                <p class="lead mb-4">Join our community of learners and knowledge-sharers today.</p>
+                <div class="d-flex justify-content-center gap-3">
+                    <a href="{% url 'register' %}" class="btn btn-primary btn-lg">
+                        Create Account <i class="fas fa-user-plus ms-2"></i>
+                    </a>
+                    <a href="{% url 'login' %}" class="btn btn-outline-secondary btn-lg">
+                        Sign In <i class="fas fa-sign-in-alt ms-2"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Combined Styles -->
+<style>
+    body{
+        font-family: "Poppins", serif;
+        font-weight: 400;
+        font-style: normal;
+        background: white;
+    }
+    
+    /* Hero section styles */
+    .hero-section {
+        background: rgb(102, 102, 102);
+        position: relative;
+    }
+
+    .hero-background-shapes .shape {
+        position: absolute;
+        background: rgba(61, 61, 61, 0.329);
+        border-radius: 50%;
+    }
+
+    .hero-background-shapes .shape-1 {
+        top: -50px;
+        left: -50px;
+        width: 200px;
+        height: 200px;
+    }
+
+    .hero-background-shapes .shape-2 {
+        bottom: -100px;
+        right: -100px;
+        width: 250px;
+        height: 250px;
+    }
+
+    .hero-background-shapes .shape-3 {
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 400px;
+        height: 400px;
+    }
+    
+
+    /* Feature card styles */
+    .card-hover {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .card-hover:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+    }
+
+    .feature-icon {
+        position: relative;
+    }
+
+    .icon-badge {
+        position: absolute;
+        top: -10px;
+        right: 40%;
+        background: #ff6b6b;
+        color: white;
+        border-radius: 50%;
+        width: 25px;
+        height: 25px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8rem;
+    }
+
+    /* Notes grid styles - from the notes page */
+    .notes-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1.6rem;
+    }
+
+    .note-card {
+        background: white;
+        border-radius: 10px;
+        padding: 1.4rem;
+        transition: all 0.3s ease;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 10px 15px rgba(0, 0, 0, 0.247);
+    }
+
+    .note-card:hover {
+        transform: scale(1.03);
+    }
+
+    .btn-star {
+        background: none;
+        border: none;
+        color: #cac9c9;
+    }
+
+    .btn-star:hover{
+        color: gold;
+    }
+
+    .btn-star.starred {
+        color: gold;
+    }
+
+    .btn-bookmark {
+        background: none;
+        border: none;
+        padding: 0.25rem 0.5rem;
+        transition: transform 0.2s ease;
+        color: #cac9c9;
+    }
+
+    .btn-bookmark.bookmarked {
+        color: black;
+    }
+
+    .btn-bookmark:hover {
+        transform: scale(1.1);
+    }
+
+    /* Animation */
+    .pulse-animation {
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+    
+    /* CTA box */
+    .cta-box {
+        background: linear-gradient(135deg, #f5f7fa 0%, #e9eef4 100%);
+        border-left: 6px solid #4a77fa;
+    }
+    
+    /* Category badge styles - from the notes page */
+    .category-badge {
+        padding: 0.5em 1em;
+    }
+
+    .category-physics { background-color: #1e4a1f; }
+    .category-chemistry { background-color: #3b7a3d; }
+    .category-biology { background-color: #5cb85c; }
+    .category-astronomy { background-color: #2f7731; }
+    .category-environmental_science { background-color: #4cae4c; }
+    .category-computer_science { background-color: #a80808; }
+    .category-engineering { background-color: #d9534f; }
+    .category-information_technology { background-color: #ee2c09; }
+    .category-artificial_intelligence { background-color: #ff5c5c; }
+    .category-data_science { background-color: #ff7f7f; }
+    .category-mathematics { background-color: #9c27b0; }
+    .category-history { background-color: #FF9800; }
+    .category-arts { background-color: #65c923; }
+    .category-literature { background-color: #8bc34a; }
+    .category-business { background-color: #4caf50; }
+    .category-health_wellness { background-color: #81c784; }
+    .category-language { background-color: #a5d6a7; }
+    .category-travel_culture { background-color: #ffa726; }
+    .category-personal_development { background-color: #ffb74d; }
+    .category-hobbies { background-color: #ffcc80; }
+    .category-education { background-color: #ff9800; }
+    .category-politics { background-color: #e64a19; }
+    .category-philosophy { background-color: #ff7043; }
+    .category-psychology { background-color: #ff8a65; }
+    .category-food_cooking { background-color: #f51c93; }
+    .category-sports_fitness { background-color: #e91e63; }
+    .category-entertainment { background-color: #ff4081; }
+    .category-design { background-color: #ff79b0; }
+    .category-spirituality { background-color: #ffa6c2; }
+    .category-parenting { background-color: #f06292; }
+    .category-diy_crafts { background-color: #ec407a; }
+    .category-gaming { background-color: #6a156d; }
+    .category-other { background-color: #f51c93; }
+    
+    /* Responsive styles */
+    @media (max-width: 768px) {
+        .notes-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .lead {
+            white-space: normal !important;
+        }
+    }
+</style>
+
+<!-- Optional: Add Animate.css for additional animations -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+{% endblock %}

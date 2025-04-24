@@ -1,0 +1,1700 @@
+{% extends 'base.html' %}
+
+{% load custom_filters %}
+
+{% block content %}
+<div class="container-fluid py-1">
+    {% if messages %}
+    <div class="messages container mb-2" style="max-width: 900px; padding: 0;">
+        {% for message in messages %}
+            <div class="alert {% if message.tags %}alert-{{ message.tags }}{% else %}alert-info{% endif %} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    </div> 
+    {% endif %}
+    
+    <div class="note-container">
+        <!-- Header Section: User info, date, category, stats -->
+        <div class="note-author-info">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="d-flex align-items-center">
+                    <img src="{{ note.user.profile_pic.url }}" alt="Profile" class="rounded-circle me-3" style="width: 42px; height: 42px;">
+                    <div>
+                        <div class="fw-bold fs-6">{{ note.user.username }}</div>
+                        <div class="text-muted" style="font-size: 13px;">{{ note.created_at|date:"F j, Y" }}</div>
+                    </div>
+                </div>
+                
+                <div class="note-actions d-flex align-items-center gap-3">
+                    <button class="stat-item btn-star {% if note.stars.exists %}starred{% endif %}" 
+                        data-note-id="{{ note.id }}">
+                        <i class="fas fa-star"></i>
+                        <span class="star-count">{{ note.stars.count }}</span>
+                    </button>
+                    
+                    <a href="{% url 'toggle_bookmark' note.id %}" class="stat-item btn-bookmark {% if note in bookmarked_notes %}bookmarked{% endif %}">
+                        <i class="fas fa-bookmark"></i>
+                    </a>
+                    {% if note.user == request.user %}
+                    <div class="edit-options">
+                        <a href="{% url 'edit_note' note.id %}" class="btn btn-sm btn-outline-secondary" title="Edit">
+                            <i class="fas fa-edit me-1"></i>Edit
+                        </a>
+                        <button class="btn btn-sm btn-outline-danger ms-1" data-bs-toggle="modal" data-bs-target="#deleteModal" title="Delete">
+                            <i class="fas fa-trash-alt me-1"></i>Delete
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="d-flex flex-wrap align-items-center gap-2 mb-4">
+                <span class="badge category-badge category-{{ note.category }}">
+                    {% if note.category == "other" %}
+                        {{ note.other_category }}
+                    {% else %}
+                        {{ note.get_category_display }}
+                    {% endif %}
+                </span>
+
+                <span class="stat-item ms-5" title="Views">
+                    {{ note.views_count }} Views
+                </span>
+
+                <span class="stat-item me-2">
+                    {{ note.comment_count }} Comments
+                </span>
+            </div>
+        </div>
+
+        <!-- Main Content Section -->
+        <div class="content-section mt-4">
+            <!-- Title -->
+            <h1 class="note-title fw-bold mb-4">{{ note.title }}</h1>
+            
+            <!-- Main Content -->
+            <div class="note-content prose">
+                {% if note.main_content %}
+                <div>
+                    {{ note.main_content|safe }}
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Tags -->
+            {% if note.tags %}
+            <div class="tags-section mt-5">
+                {% with tags=note.tags|split:"," %}
+                    {% for tag in tags %}
+                        <span class="badge tag">{{ tag|strip }}</span>
+                    {% endfor %}
+                {% endwith %}
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Attached Files Section -->
+        {% if note.files.all %}
+        <div class="files-section mt-5 pt-4">
+            <h5 class="section-title"><i class="fas fa-paperclip me-2"></i>Attached Files</h5>
+            <div class="row g-3 mt-3">
+                {% for file in note.files.all %}
+                <div class="col-md-6">
+                    <div class="file-item">
+                        <div class="file-info">
+                            <i class="fas fa-file me-2"></i>
+                            {{ file.filename }}
+                            <small class="text-muted ms-2">({{ file.file_size|filesizeformat }})</small>
+                        </div>
+                        <a href="#" class="file-link open-file" data-url="{% url 'open_file' file.id %}">
+                            <i class="fas fa-external-link-alt"></i>
+                        </a>                    
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- AI Actions Section -->
+        <div class="summary-section mt-5 pt-4">
+            <h5 class="section-title mb-4">
+                <img width="35" height="35" src="https://img.icons8.com/glyph-neue/64/metallic-paint.png" alt="metallic-paint" class="me-2"/>AI Note Summary
+            </h5>
+            
+            <div class="summary-controls d-flex justify-content-between align-items-center mb-4">
+                <div class="summary-type-selector">
+                    <div class="btn-group" role="group">
+                        <input type="radio" class="btn-check" name="summary-type" id="brief-summary" autocomplete="off" value="brief" checked>
+                        <label class="btn btn-outline-primary" for="brief-summary">Brief Summary</label>
+        
+                        <input type="radio" class="btn-check" name="summary-type" id="detailed-summary" autocomplete="off" value="detailed">
+                        <label class="btn btn-outline-primary" for="detailed-summary">Detailed Summary</label>
+                    </div>
+                </div>
+                
+                <button id="summarize-btn" class="btn btn-primary summarize-btn creative-btn" data-note-id="{{ note.id }}">
+                    <i class="fa-solid fa-wand-sparkles me-2"></i>Summarize
+                </button>
+            </div>
+            
+            <div id="summary-loading" class="text-center my-3 hidden">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="text-muted mt-2">Generating summary...</p>
+            </div>
+            
+            <div id="summary-container" class="mt-3">
+                {% if note.latest_summary %}
+                    <div class="summary-content card">
+                        <div class="card-body">
+                            <p>{{ note.latest_summary.content }}</p>
+                            <small class="text-muted">
+                                Generated on {{ note.latest_summary.created_at|date:"F j, Y H:i" }} 
+                                by {{ note.latest_summary.generated_by.username }}
+                            </small>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <!-- <div class="summary-history mt-4">
+                <button id="view-summary-history" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-history me-2"></i>View Summary History
+                </button> 
+            </div> -->
+        </div>
+
+        <!-- Quiz Section -->
+        <div class="quiz-section mt-5 pt-4">
+            <h5 class="section-title mb-4">
+                <img width="25" height="25" src="https://img.icons8.com/ios-filled/35/checklist--v1.png" alt="checklist--v1" class="me-2"/>Quiz Generator
+            </h5>
+            
+            <div class="quiz-controls d-flex justify-content-between align-items-center mb-4">
+                <div class="quiz-type-selector">
+                    <div class="btn-group" role="group">
+                        <input type="radio" class="btn-check" name="quiz-type" id="basic-quiz" autocomplete="off" value="basic" checked>
+                        <label class="btn btn-outline-primary" for="basic-quiz">Basic Quiz</label>
+            
+                        <input type="radio" class="btn-check" name="quiz-type" id="advanced-quiz" autocomplete="off" value="advanced">
+                        <label class="btn btn-outline-primary" for="advanced-quiz">Advanced Quiz</label>
+                    </div>
+                </div>
+                
+                <div class="quiz-options">
+                    <select id="quiz-question-count" class="form-select form-select-md">
+                        <option value="10">10 Questions</option>
+                        <option value="15" selected>15 Questions</option>
+                        <option value="20">20 Questions</option>
+                    </select>
+                </div>
+                
+                <button id="generate-quiz-btn" class="btn btn-md creative-quiz creative-btn" data-note-id="{{ note.id }}">
+                    <i class="fa-solid fa-wand-sparkles me-2"></i> Generate Quiz
+                </button>
+            </div>
+            
+            <div id="quiz-loading" class="text-center my-3" style="display: none;">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="text-muted mt-2">Generating quiz questions...</p>
+            </div>
+            
+            <div id="quiz-container" class="mt-3">
+                <!-- Quiz will be generated here -->
+            </div>
+            
+            <div id="quiz-results" class="mt-4" style="display: none;">
+                <!-- Results will be displayed here -->
+            </div>
+        </div>
+
+            
+            
+        <!-- Discussion Section (Only for public notes) -->
+        {% if note.is_public %}
+        <div class="discussion-section mt-5 pt-4">
+            <h5 class="section-title"><i class="fas fa-comments me-2"></i>Discussion</h5>
+            
+            <!-- Comment Form -->
+            <div class="comment-form mt-4">
+                <form id="commentForm" action="{% url 'add_comment' note.id %}" method="POST">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <textarea class="form-control" name="content" rows="2" 
+                                placeholder="Share your thoughts..." required></textarea>
+                        <input type="hidden" name="parent_id" id="parentCommentId" value="">
+                    </div>
+                    <div class="mt-2 text-end">
+                        <button type="submit" class="btn btn-sm btn-primary">
+                            <i class="fas fa-paper-plane me-2"></i>Post
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="comments-divider"></div>
+            
+            <!-- Comments List -->
+            <div class="comments-list">
+                {% for comment in comments %}
+                <div class="comment-item" id="comment-{{ comment.id }}">
+                    <div class="comment-header d-flex justify-content-between align-items-start">
+                        <div class="d-flex align-items-center gap-2">
+                            <img src="{{ comment.user.profile_pic.url }}" alt="Profile" class="rounded-circle" style="width: 36px; height: 36px;">
+                            <div>
+                                <div class="fw-bold">{{ comment.user.username }}</div>
+                                <div class="text-muted small">{{ comment.created_at|date:"F j, Y" }}</div>
+                            </div>
+                        </div>
+                        <div class="comment-actions">
+                            <button class="action-btn vote-btn {% if comment|has_voted:request.user %}voted{% endif %}" 
+                                    data-comment-id="{{ comment.id }}"
+                                    title="Vote this comment">
+                                <i class="fas fa-thumbs-up"></i>
+                                <span class="vote-count">{{ comment.get_vote_count }}</span>
+                            </button>
+                            <button class="action-btn report-btn" 
+                                    data-comment-id="{{ comment.id }}"
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#reportModal">
+                                <i class="fas fa-flag"></i>
+                            </button>
+                            {% if comment.user == request.user %}
+                            <button class="action-btn delete-comment" 
+                                    data-comment-id="{{ comment.id }}">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="comment-content my-3">{{ comment.content }}</div>
+                    <button class="reply-btn mb-3" data-comment-id="{{ comment.id }}">
+                        <i class="fas fa-reply me-1"></i>Reply
+                    </button>
+                    
+                    <!-- Replies -->
+                    <div class="replies-container">
+                        {% for reply in comment.replies.all %}
+                        <div class="reply-item" id="comment-{{ reply.id }}">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="d-flex align-items-center gap-2">
+                                    <img src="{{ reply.user.profile_pic.url }}" alt="Profile" class="rounded-circle" style="width: 36px; height: 36px;">
+                                    <div>
+                                        <div class="fw-bold small">{{ reply.user.username }}</div>
+                                        <div class="text-muted x-small" style="font-size: 14px">{{ reply.created_at|date:"F j, Y" }}</div>
+                                    </div>
+                                </div>
+                                <div class="reply-actions">
+                                    <button class="action-btn vote-btn {% if reply|has_voted:request.user %}voted{% endif %}" 
+                                            data-comment-id="{{ reply.id }}">
+                                        <i class="fas fa-thumbs-up"></i>
+                                        <span class="vote-count">{{ reply.get_vote_count }}</span>
+                                    </button>
+                                    <button class="action-btn report-btn" 
+                                            data-comment-id="{{ reply.id }}"
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#reportModal">
+                                        <i class="fas fa-flag"></i>
+                                    </button>
+                                    {% if reply.user == request.user %}
+                                    <button class="action-btn delete-comment" 
+                                            data-comment-id="{{ reply.id }}">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="reply-content mt-2">{{ reply.content }}</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% if not forloop.last %}<div class="comments-divider"></div>{% endif %}
+                {% empty %}
+                <div class="text-center text-muted my-5">
+                    <i class="fas fa-comments fa-2x mb-3"></i>
+                    <p>Be the first to start the discussion!</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+<!-- More from this user section -->
+<div class="more-from-user mt-5 pt-4">
+    <h5 class="section-title"><i class="fas fa-book me-2"></i>More from this user</h5>
+    <div class="row g-4 mt-3">
+        {% for related_note in related_notes %}
+        <div class="col-md-4 mb-3">
+            <div class="related-note">
+                <!-- 1. Category badge and stats on top -->
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="badge category-badge category-{{ related_note.category }} small">
+                        {% if related_note.category == "other" %}
+                            {{ related_note.other_category }}
+                        {% else %}
+                            {{ related_note.get_category_display }}
+                        {% endif %}
+                    </span>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="stat-item small">
+                            <i class="fas fa-star"></i> {{ related_note.stars.count }}
+                        </span>
+                        <span class="stat-item small">
+                            <i class="fas fa-bookmark"></i>
+                        </span>
+                    </div>
+                </div>
+                
+                <!-- 2. Title -->
+                <a href="{% url 'note_detail' related_note.id %}" class="text-decoration-none">
+                    <h6 class="mb-3">{{ related_note.title }}</h6>
+                </a>
+                
+                <!-- 3. Description/excerpt -->
+                {% if related_note.description|striptags|truncatechars:100 %}
+                <div class="note-excerpt mb-3">
+                    {{ related_note.description|striptags|truncatechars:100 }}
+                </div>
+                {% endif %}
+                
+                <!-- 4. Time, views, comments at bottom -->
+                <div class="d-flex justify-content-between align-items-center mt-auto">
+                    <div class="text-muted small">{{ related_note.created_at|date:"F j, Y" }}</div>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="small text-muted">
+                            <i class="fas fa-eye"></i> {{ related_note.views_count }}
+                        </span>
+                        <span class="small text-muted">
+                            <i class="fas fa-comment"></i> {{ related_note.comment_count }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <p class="text-muted">No other notes from this user yet.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+        
+        <!-- Back to Notes Button -->
+        <div class="mt-4 mb-3 text-center">
+            <a href="{% url 'home' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Back to Notes
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Note Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to delete this note? This action cannot be undone.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form action="{% url 'delete_note' note.id %}" method="POST" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Report Modal -->
+<div class="modal fade" id="reportModal" tabindex="-1" aria-labelledby="reportModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="reportModalLabel">Report Comment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="reportForm">
+                    <input type="hidden" id="reportCommentId" name="comment_id">
+                    <div class="mb-3">
+                        <label for="reportReason" class="form-label">Reason</label>
+                        <select class="form-select" id="reportReason" name="reason" required>
+                            <option value="">Select a reason</option>
+                            <option value="spam">Spam</option>
+                            <option value="abuse">Abuse/Harassment</option>
+                            <option value="inappropriate">Inappropriate Content</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="reportDetails" class="form-label">Additional Details (Optional)</label>
+                        <textarea class="form-control" id="reportDetails" name="details" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="submitReport">Submit Report</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+body {
+    font-family: "Poppins", serif;
+    font-weight: 400;
+    background-color: white;
+    color: #292929;
+    line-height: 1.6;
+}
+
+.note-container {
+    max-width: 900px;
+    margin: 0 auto;
+    position: relative;
+}
+
+.note-author-info {
+    margin-bottom: 1rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.144);
+}
+
+.section-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    position: relative;
+    display: inline-block;
+    margin-bottom: 0;
+}
+
+
+
+/* Typography */
+.note-title {
+    font-size: 2.75rem;
+    line-height: 1.2;
+    letter-spacing: -0.022em;
+    margin-bottom: 1.5rem;
+    color: #1a1a1a;
+}
+
+.note-content {
+    font-size: 1.125rem;
+    line-height: 1.8;
+    color: #333;
+    max-width: 900px;
+}
+
+
+/* Stats section */
+.stat-item {
+    color: #757575;
+    background: none;
+    border: none;
+    padding: 0;
+    margin-right: 0.75rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    transition: color 0.2s;
+}
+
+.stat-item:hover {
+    color: #292929;
+}
+
+.btn-star {
+    color: #757575;
+}
+
+.btn-star.starred {
+    color: #ffc107;
+}
+
+.btn-bookmark {
+    color: #757575;
+}
+
+.btn-bookmark.bookmarked {
+    color: #292929;
+}
+
+/* Tags */
+.tags-section {
+    margin-top: 2rem;
+}
+
+.tag {
+    background-color: #f2f2f2;
+    color: #292929;
+    padding: 0.8rem 1.8rem;
+    border-radius: 50px;
+    margin-right: 0.5rem;
+    font-weight: normal;
+    text-transform: lowercase;
+    font-size: 0.8rem;
+    display: inline-block;
+}
+
+/* Files section */
+.file-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.144);
+    transition: all 0.2s;
+    background-color: #f9f9f9;
+}
+
+.file-item:hover {
+    background-color: #f9f9f9;
+}
+
+.file-link {
+    color: #757575;
+}
+
+.file-link:hover {
+    color: #173289;
+}
+
+/* Comments and replies */
+.comments-list {
+    margin-top: 1.5rem;
+}
+
+.comments-divider {
+    border: none;
+    height: 1px;
+    background-color: rgba(0, 0, 0, 0.05);
+    margin: 1.5rem 0;
+}
+
+.comment-form textarea {
+    border: 1px dashed #e0e0e0;
+    border-radius: 8px;
+    resize: vertical;
+    padding: 0.75rem;
+    transition: all 0.2s;
+    background-color: #f9f9f9;
+}
+
+.comment-form textarea:focus {
+    border-color: #174589;
+    box-shadow: 0 0 0 3px rgba(26, 137, 23, 0.1);
+}
+
+.comment-item {
+    padding: 1rem 0;
+}
+
+.comment-content {
+    color: #292929;
+    padding-left: 2.75rem;
+}
+
+.action-btn {
+    background: none;
+    border: none;
+    color: #757575;
+    padding: 0;
+    margin-left: 0.75rem;
+    transition: color 0.2s;
+}
+
+.action-btn:hover {
+    color: #292929;
+}
+
+.vote-btn.voted {
+    color: #4caf50;
+}
+
+.reply-btn {
+    background: none;
+    border: none;
+    color: #757575;
+    padding: 0;
+    font-size: 0.9rem;
+    margin-left: 2.75rem;
+    transition: all 0.2s;
+}
+
+.reply-btn:hover {
+    color: #1a8917;
+    text-decoration: underline;
+}
+
+.replies-container {
+    margin-left: 3rem;
+}
+
+.reply-item {
+    margin-top: 0.75rem;
+    padding: 0.75rem 1rem;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    border-left: 3px solid #e0e0e0;
+}
+
+.reply-content {
+    margin-top: 0.5rem;
+    font-size: 0.95rem;
+}
+
+.creative-btn {
+    background-color: white;
+    border: 1px #4e0261 solid;
+    padding-top: 6px;
+    padding-bottom: 6px;
+    color: #4e0261;
+}
+
+.creative-btn:hover {
+    background: linear-gradient(45deg, #73038f, #3841eb);
+    border: none;
+    color: white;
+    padding-top: 6px;
+    padding-bottom: 6px;
+}
+
+/* Quiz Section Styles */
+.quiz-section {
+    position: relative;
+}
+
+.quiz-container {
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    padding: 1.5rem;
+}
+
+.quiz-question {
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    padding-bottom: 1.5rem;
+}
+
+.quiz-question:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.question-text {
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: #1a1a1a;
+    display: flex;
+    align-items: flex-start;
+}
+
+.question-number {
+    background-color: #4e0261;
+    color: white;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    margin-right: 10px;
+    flex-shrink: 0;
+    font-size: 0.9rem;
+}
+
+.option-item {
+    position: relative;
+    padding: 10px 15px;
+    margin-bottom: 10px;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    transition: all 0.2s;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+}
+
+.option-item:hover {
+    background-color: #f0f0f0;
+}
+
+.option-item.selected {
+    border-color: #4e0261;
+    background-color: rgba(78, 2, 97, 0.05);
+}
+
+.option-item.correct {
+    border-color: #28a745;
+    background-color: rgba(40, 167, 69, 0.1);
+}
+
+.option-item.incorrect {
+    border-color: #dc3545;
+    background-color: rgba(220, 53, 69, 0.1);
+}
+
+.option-label {
+    margin-left: 10px;
+    width: 100%;
+}
+
+.option-status {
+    margin-left: auto;
+    display: none;
+}
+
+.option-status.show {
+    display: block;
+}
+
+.fa-check-circle {
+    color: #28a745;
+}
+
+.fa-times-circle {
+    color: #dc3545;
+}
+
+.quiz-submit-btn {
+    background: linear-gradient(45deg, #73038f, #3841eb);
+    border: none;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 50px;
+    font-weight: 500;
+    transition: all 0.3s;
+}
+
+.quiz-submit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.quiz-results {
+    background-color: #fff;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-top: 1.5rem;
+    text-align: center;
+    border: 1px solid #e0e0e0;
+}
+
+.score-display {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.score-percentage {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #4e0261;
+    display: block;
+    margin: 1rem 0;
+}
+
+.score-message {
+    margin: 1rem 0;
+}
+
+.try-again-btn {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    color: #212529;
+    padding: 8px 16px;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.try-again-btn:hover {
+    background-color: #e9ecef;
+}
+
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .quiz-controls {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: stretch;
+    }
+    
+    .quiz-type-selector, .quiz-options, #generate-quiz-btn {
+        width: 100%;
+    }
+}
+
+
+/* Related notes */
+.related-note {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    padding: 1.25rem;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.04);
+    transition: all 0.3s;
+    height: 100%;
+}
+
+.related-note:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.08);
+}
+
+.related-note h6 {
+    color: #1a1a1a;
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.related-note a:hover h6 {
+    color: #173589;
+}
+
+.note-excerpt {
+    font-size: 0.85rem;
+    line-height: 1.5;
+    display: -webkit-box;
+    line-clamp: 3;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    color: #5a5a5a;
+}
+
+.related-note .stat-item {
+    color: #757575;
+    font-size: 0.85rem;
+}
+
+.related-note .stat-item i {
+    margin-right: 0.3rem;
+}
+
+.related-note .category-badge {
+    font-size: 0.75rem;
+    padding: 0.3em 0.7em;
+}
+
+/* Category badges */
+.category-badge {
+    color: white;
+    padding: 0.4em 0.8em;
+    font-size: 0.85rem;
+    font-size: 0.8rem;
+    text-transform: capitalize;
+    display: inline-block;
+}
+
+/* Keep your existing category colors */
+.category-physics {
+    background-color: #1e4a1f; /* Darker shade of green */
+}
+
+.category-chemistry {
+    background-color: #3b7a3d; /* Medium shade of green */
+}
+
+.category-biology {
+    background-color: #5cb85c; /* Lighter shade of green */
+}
+
+.category-astronomy {
+    background-color: #2f7731; /* Original green */
+}
+
+.category-environmental_science {
+    background-color: #4cae4c; /* Another shade of green */
+}
+
+/* Technology Subcategories */
+.category-computer_science {
+    background-color: #a80808; /* Darker shade of red */
+}
+
+.category-engineering {
+    background-color: #d9534f; /* Medium shade of red */
+}
+
+.category-information_technology {
+    background-color: #ee2c09; /* Original red */
+}
+
+.category-artificial_intelligence {
+    background-color: #ff5c5c; /* Lighter shade of red */
+}
+
+.category-data_science {
+    background-color: #ff7f7f; /* Another shade of red */
+}
+
+/* Other Categories */
+.category-mathematics {
+    background-color: #9c27b0; /* Original purple */
+}
+
+.category-history {
+    background-color: #FF9800; /* Original orange */
+}
+
+.category-arts {
+    background-color: #65c923; /* Original lime green */
+}
+
+.category-literature {
+    background-color: #8bc34a; /* Lighter shade of lime green */
+}
+
+.category-business {
+    background-color: #4caf50; /* Another shade of green */
+}
+
+.category-health_wellness {
+    background-color: #81c784; /* Lighter shade of green */
+}
+
+.category-language {
+    background-color: #a5d6a7; /* Very light shade of green */
+}
+
+.category-travel_culture {
+    background-color: #ffa726; /* Lighter shade of orange */
+}
+
+.category-personal_development {
+    background-color: #ffb74d; /* Very light shade of orange */
+}
+
+.category-hobbies {
+    background-color: #ffcc80; /* Another light shade of orange */
+}
+
+.category-education {
+    background-color: #ff9800; /* Original orange */
+}
+
+.category-politics {
+    background-color: #e64a19; /* Darker shade of orange */
+}
+
+.category-philosophy {
+    background-color: #ff7043; /* Lighter shade of orange */
+}
+
+.category-psychology {
+    background-color: #ff8a65; /* Another light shade of orange */
+}
+
+.category-food_cooking {
+    background-color: #f51c93; /* Original pink */
+}
+
+.category-sports_fitness {
+    background-color: #e91e63; /* Darker shade of pink */
+}
+
+.category-entertainment {
+    background-color: #ff4081; /* Lighter shade of pink */
+}
+
+.category-design {
+    background-color: #ff79b0; /* Very light shade of pink */
+}
+
+.category-spirituality {
+    background-color: #ffa6c2; /* Another light shade of pink */
+}
+
+.category-parenting {
+    background-color: #f06292; /* Medium shade of pink */
+}
+
+.category-diy_crafts {
+    background-color: #ec407a; /* Another shade of pink */
+}
+
+.category-other {
+    background-color: #f51c93; /* Original pink */
+}
+
+
+/* Animation for new comments */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.new-comment {
+    animation: fadeIn 0.3s ease-out;
+}
+
+/* Visual dividers between sections */
+.content-section, .files-section, .actions-section, .discussion-section, .more-from-user {
+    position: relative;
+}
+
+.mt-5.pt-4 {
+    border-top: 1px solid rgba(0, 0, 0, 0.144);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .note-title {
+        font-size: 2rem;
+    }
+    
+    .note-content {
+        font-size: 1rem;
+    }
+    
+    .comment-content {
+        padding-left: 0;
+        margin-top: 1rem;
+    }
+    
+    .reply-btn {
+        margin-left: 0;
+    }
+    
+    .replies-container {
+        margin-left: 1rem;
+    }
+}
+</style>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Star functionality
+    document.querySelectorAll('.btn-star').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const noteId = this.getAttribute('data-note-id');
+            toggleStar(noteId);
+        });
+    });
+
+    // Bookmark functionality
+    document.querySelectorAll('.btn-bookmark').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const url = this.getAttribute('href');
+            
+            fetch(url, {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': getCookie('csrftoken')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    this.classList.toggle('bookmarked');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        });
+    });
+
+    // Open file
+    document.querySelectorAll('.open-file').forEach(link => {
+        link.addEventListener('click', function(event) {
+            event.preventDefault();
+            let fileUrl = this.getAttribute('data-url');
+            
+            if (fileUrl) {
+                window.open(fileUrl, '_blank');
+            }
+        });
+    });
+
+    // Comment voting
+    document.querySelectorAll('.vote-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const commentId = this.dataset.commentId;
+            const voteCount = this.querySelector('.vote-count');
+            
+            fetch(`/vote-comment/${commentId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    voteCount.textContent = data.vote_count;
+                    this.classList.toggle('voted');
+                }
+            });
+        });
+    });
+
+    // Reply functionality
+    document.querySelectorAll('.reply-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const commentId = this.dataset.commentId;
+            const commentElement = document.querySelector(`#comment-${commentId}`);
+            
+            // Remove any existing reply forms
+            document.querySelectorAll('.reply-form').forEach(f => f.remove());
+            
+            // Clone the comment form
+            const form = document.querySelector('#commentForm').cloneNode(true);
+            form.classList.add('reply-form', 'mt-3', 'mb-3');
+            form.querySelector('#parentCommentId').value = commentId;
+            
+            // Add cancel button
+            const cancelBtn = document.createElement('button');
+            cancelBtn.className = 'btn btn-sm btn-outline-secondary me-2';
+            cancelBtn.innerHTML = 'Cancel';
+            cancelBtn.type = 'button';
+            cancelBtn.addEventListener('click', () => form.remove());
+            
+            const btnContainer = form.querySelector('.text-end');
+            btnContainer.prepend(cancelBtn);
+            
+            // Add form after the reply button
+            this.after(form);
+        });
+    });
+
+    // Comment deletion
+    document.querySelectorAll('.delete-comment').forEach(btn => {
+        btn.addEventListener('click', function() {
+            if (confirm('Are you sure you want to delete this comment?')) {
+                const commentId = this.dataset.commentId;
+                fetch(`/delete-comment/${commentId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        document.querySelector(`#comment-${commentId}`).remove();
+                    }
+                });
+            }
+        });
+    });
+
+    // Comment submission
+    document.querySelector('#commentForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        
+        fetch(this.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                location.reload();
+            }
+        });
+    });
+
+    // Report modal
+    document.querySelectorAll('.report-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const commentId = this.dataset.commentId;
+            document.getElementById('reportCommentId').value = commentId;
+        });
+    });
+
+    // Report submission
+    document.getElementById('submitReport').addEventListener('click', function() {
+        const form = document.getElementById('reportForm');
+        const commentId = document.getElementById('reportCommentId').value;
+        const formData = new FormData(form);
+
+        fetch(`/report-comment/${commentId}/`, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                const reportModal = bootstrap.Modal.getInstance(document.getElementById('reportModal'));
+                reportModal.hide();
+                alert('Thank you for your report. We will review it shortly.');
+                form.reset();
+            } else {
+                alert(data.message || 'An error occurred while submitting your report.');
+            }
+        });
+    });
+});
+
+function toggleStar(noteId) {
+    fetch(`/toggle-star/${noteId}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    }).then(response => {
+        if (response.ok) {
+            location.reload();
+        }
+    });
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const summarizeButton = document.getElementById('summarize-btn');
+    const summaryContainer = document.getElementById('summary-container');
+    const loadingIndicator = document.getElementById('summary-loading');
+    //const viewHistoryButton = document.getElementById('view-summary-history');
+
+    // Ensure loading indicator is hidden by default
+    if (loadingIndicator) {
+        loadingIndicator.style.display = 'none';
+    }
+
+    // Summary generation
+    if (summarizeButton) {
+        summarizeButton.addEventListener('click', function() {
+            const noteId = this.dataset.noteId;
+            const summaryType = document.querySelector('input[name="summary-type"]:checked').value;
+            
+            // Show loading indicator
+            if (loadingIndicator) {
+                loadingIndicator.style.display = 'block';
+            }
+            
+            // Clear previous summaries
+            if (summaryContainer) {
+                summaryContainer.innerHTML = '';
+            }
+
+            // Disable button during generation
+            summarizeButton.disabled = true;
+
+            fetch(`/generate_summary/${noteId}/?type=${summaryType}`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Hide loading indicator
+                if (loadingIndicator) {
+                    loadingIndicator.style.display = 'none';
+                }
+
+                if (data.status === 'success') {
+                    // Create summary element
+                    const summaryElement = document.createElement('div');
+                    summaryElement.classList.add('summary-content', 'card', 'mb-3');
+                    summaryElement.innerHTML = `
+                        <div class="card-body">
+                            <p>${data.summary}</p>
+                            <small class="text-muted">
+                                Generated on ${new Date(data.created_at).toLocaleString()} 
+                                by ${data.generated_by}
+                                (${summaryType.charAt(0).toUpperCase() + summaryType.slice(1)} Summary)
+                            </small>
+                        </div>
+                    `;
+                    
+                    // Clear previous summaries and add new summary
+                    if (summaryContainer) {
+                        summaryContainer.innerHTML = '';
+                        summaryContainer.appendChild(summaryElement);
+                    }
+                } else {
+                    // Handle error
+                    if (summaryContainer) {
+                        summaryContainer.innerHTML = `
+                            <div class="alert alert-danger">
+                                ${data.message || 'Failed to generate summary'}
+                            </div>
+                        `;
+                    }
+                }
+            })
+            .catch(error => {
+                // Hide loading indicator in case of error
+                if (loadingIndicator) {
+                    loadingIndicator.style.display = 'none';
+                }
+                
+                // Handle network errors
+                if (summaryContainer) {
+                    summaryContainer.innerHTML = `
+                        <div class="alert alert-danger">
+                            An error occurred while generating the summary.
+                        </div>
+                    `;
+                }
+                console.error('Error:', error);
+            })
+            .finally(() => {
+                // Re-enable button
+                summarizeButton.disabled = false;
+            });
+        });
+    }
+
+    // View summary history
+    /*if (viewHistoryButton) {
+        viewHistoryButton.addEventListener('click', function() {
+            const noteId = summarizeButton.dataset.noteId;
+            
+            fetch(`/get_note_summaries/${noteId}/`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    const historyModal = createSummaryHistoryModal(data.summaries);
+                    document.body.appendChild(historyModal);
+                    new bootstrap.Modal(historyModal).show();
+                }
+            });
+        });
+    }*/
+
+    /*function createSummaryHistoryModal(summaries) {
+        const modal = document.createElement('div');
+        modal.classList.add('modal', 'fade');
+        modal.innerHTML = `
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Summary History</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        ${summaries.map(summary => `
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <p>${summary.content}</p>
+                                    <small class="text-muted">
+                                        Generated on ${new Date(summary.created_at).toLocaleString()} 
+                                        by ${summary.generated_by}
+                                        ${summary.is_latest ? '<span class="badge bg-primary ms-2">Latest</span>' : ''}
+                                    </small>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            </div>
+        `;
+        return modal;
+    }*/
+
+    // Utility function to get CSRF token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    const generateQuizBtn = document.getElementById('generate-quiz-btn');
+    const quizContainer = document.getElementById('quiz-container');
+    const quizResults = document.getElementById('quiz-results');
+    const loadingIndicator = document.getElementById('quiz-loading');
+    
+    if (generateQuizBtn) {
+        generateQuizBtn.addEventListener('click', function() {
+            const noteId = this.dataset.noteId;
+            const quizType = document.querySelector('input[name="quiz-type"]:checked').value;
+            const questionCount = document.getElementById('quiz-question-count').value;
+            
+            // Show loading indicator
+            if (loadingIndicator) {
+                loadingIndicator.style.display = 'block';
+            }
+            
+            // Clear previous quiz
+            if (quizContainer) {
+                quizContainer.innerHTML = '';
+            }
+            
+            // Hide previous results
+            if (quizResults) {
+                quizResults.style.display = 'none';
+            }
+            
+            // Disable button during generation
+            generateQuizBtn.disabled = true;
+            
+            fetch(`/generate_quiz/${noteId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    'quiz_type': quizType,
+                    'question_count': questionCount
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Hide loading indicator
+                if (loadingIndicator) {
+                    loadingIndicator.style.display = 'none';
+                }
+                
+                if (data.status === 'success') {
+                    displayQuiz(data.quiz);
+                } else {
+                    // Handle error
+                    if (quizContainer) {
+                        quizContainer.innerHTML = `
+                            <div class="alert alert-danger">
+                                ${data.message || 'Failed to generate quiz'}
+                            </div>
+                        `;
+                    }
+                }
+            })
+            .catch(error => {
+                // Hide loading indicator in case of error
+                if (loadingIndicator) {
+                    loadingIndicator.style.display = 'none';
+                }
+                
+                // Handle network errors
+                if (quizContainer) {
+                    quizContainer.innerHTML = `
+                        <div class="alert alert-danger">
+                            An error occurred while generating the quiz.
+                        </div>
+                    `;
+                }
+                console.error('Error:', error);
+            })
+            .finally(() => {
+                // Re-enable button
+                generateQuizBtn.disabled = false;
+            });
+        });
+    }
+    
+    function displayQuiz(quiz) {
+        if (!quizContainer) return;
+        
+        const quizForm = document.createElement('form');
+        quizForm.id = 'quiz-form';
+        quizForm.className = 'quiz-container';
+        
+        // Create questions
+        quiz.questions.forEach((question, qIndex) => {
+            const questionDiv = document.createElement('div');
+            questionDiv.className = 'quiz-question';
+            questionDiv.dataset.questionId = qIndex;
+            
+            // Question text with number badge
+            const questionText = document.createElement('div');
+            questionText.className = 'question-text';
+            questionText.innerHTML = `
+                <span class="question-number">${qIndex + 1}</span>
+                <span>${question.question}</span>
+            `;
+            questionDiv.appendChild(questionText);
+            
+            // Options
+            question.options.forEach((option, oIndex) => {
+                const optionDiv = document.createElement('div');
+                optionDiv.className = 'option-item';
+                optionDiv.dataset.value = oIndex;
+                
+                optionDiv.innerHTML = `
+                    <input type="radio" name="question_${qIndex}" value="${oIndex}" id="q${qIndex}_opt${oIndex}" style="display: none;">
+                    <span class="option-label">${option}</span>
+                    <span class="option-status">
+                        <i class="fas fa-check-circle"></i>
+                        <i class="fas fa-times-circle"></i>
+                    </span>
+                `;
+                
+                // Add click event
+                optionDiv.addEventListener('click', function() {
+                    // Deselect all options for this question
+                    questionDiv.querySelectorAll('.option-item').forEach(item => {
+                        item.classList.remove('selected');
+                    });
+                    
+                    // Select this option
+                    this.classList.add('selected');
+                    
+                    // Check the radio button
+                    const radio = this.querySelector('input[type="radio"]');
+                    if (radio) {
+                        radio.checked = true;
+                    }
+                });
+                
+                questionDiv.appendChild(optionDiv);
+            });
+            
+            quizForm.appendChild(questionDiv);
+        });
+        
+        // Add submit button
+        const submitButton = document.createElement('button');
+        submitButton.type = 'button'; // Prevent form submission
+        submitButton.className = 'btn quiz-submit-btn mt-4 w-100';
+        submitButton.innerHTML = '<i class="fas fa-check-circle me-2"></i>Submit Answers';
+        
+        submitButton.addEventListener('click', function() {
+            gradeQuiz(quiz);
+        });
+        
+        quizForm.appendChild(submitButton);
+        quizContainer.appendChild(quizForm);
+    }
+    
+    function gradeQuiz(quiz) {
+        let correctAnswers = 0;
+        const totalQuestions = quiz.questions.length;
+        
+        // Grade each question
+        quiz.questions.forEach((question, qIndex) => {
+            const questionDiv = document.querySelector(`.quiz-question[data-question-id="${qIndex}"]`);
+            const selectedOption = questionDiv.querySelector('input[name="question_' + qIndex + '"]:checked');
+            
+            // Store correct answer index
+            const correctIndex = question.correct_answer;
+            
+            // Mark all options appropriately
+            questionDiv.querySelectorAll('.option-item').forEach((optionItem, oIndex) => {
+                const isSelected = selectedOption && Number(selectedOption.value) === oIndex;
+                const isCorrect = oIndex === correctIndex;
+                
+                // Show status icons
+                const statusSpan = optionItem.querySelector('.option-status');
+                statusSpan.classList.add('show');
+                
+                const checkIcon = statusSpan.querySelector('.fa-check-circle');
+                const timesIcon = statusSpan.querySelector('.fa-times-circle');
+                
+                // Hide both icons initially
+                checkIcon.style.display = 'none';
+                timesIcon.style.display = 'none';
+                
+                if (isCorrect) {
+                    // Always show check for correct answer
+                    optionItem.classList.add('correct');
+                    checkIcon.style.display = 'inline-block';
+                } else if (isSelected) {
+                    // Show times for incorrect selected answer
+                    optionItem.classList.add('incorrect');
+                    timesIcon.style.display = 'inline-block';
+                }
+                
+                // Disable further selection
+                optionItem.style.pointerEvents = 'none';
+            });
+            
+            // Check if correct answer was selected
+            if (selectedOption && Number(selectedOption.value) === correctIndex) {
+                correctAnswers++;
+            }
+        });
+        
+        // Calculate score
+        const score = (correctAnswers / totalQuestions) * 100;
+        
+        // Display results
+        if (quizResults) {
+            let resultMessage = '';
+            
+            if (score === 100) {
+                resultMessage = "Perfect! You've mastered this topic!";
+            } else if (score >= 80) {
+                resultMessage = 'Great job! You have a solid understanding of the material.';
+            } else if (score >= 60) {
+                resultMessage = "Good effort! A little more review and you'll be an expert.";
+            } else {
+                resultMessage = 'Keep studying! Review the material and try again.';
+            }
+            
+            quizResults.innerHTML = `
+                <div class="quiz-results">
+                    <h4>Quiz Results</h4>
+                    <div class="score-display">You scored</div>
+                    <div class="score-percentage">${Math.round(score)}%</div>
+                    <div class="score-message">${correctAnswers} out of ${totalQuestions} questions correct</div>
+                    <p class="mb-4">${resultMessage}</p>
+                    <button class="btn try-again-btn" id="try-again-btn">
+                        <i class="fas fa-redo me-2"></i>Try Again
+                    </button>
+                </div>
+            `;
+            
+            quizResults.style.display = 'block';
+            
+            // Scroll to results
+            quizResults.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            
+            // Add event listener to try again button
+            document.getElementById('try-again-btn').addEventListener('click', function() {
+                // Trigger click on generate quiz button
+                generateQuizBtn.click();
+            });
+        }
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,970 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<main class="container py-4">
+    <!-- Profile Card -->
+    <div class="profile-card">
+        <div class="profile-header">
+            <div class="profile-avatar-container">
+                <div class="profile-avatar">
+                    {% if user_profile_pic %}
+                        <img src="{{ user_profile_pic }}" alt="Profile Photo">
+                    {% else %}
+                        <img src="/api/placeholder/150/150" alt="Profile Photo">
+                    {% endif %}
+                </div>
+                {% if is_owner %}
+                <div class="edit-avatar-button">
+                    <a href="#" class="btn btn-sm btn-light btn-icon">
+                        <i class="fas fa-camera"></i>
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="profile-identity">
+                <div class="username-container">
+                    <h1 class="profile-username">{{ user.username }}</h1>
+                    {% if is_owner %}
+                    <a href="#" class="edit-button">
+                        <i class="fas fa-pencil-alt"></i>
+                    </a>
+                    {% endif %}
+                </div>
+                <h2 class="profile-fullname">{{ user.first_name }} {{ user.last_name }}</h2>
+            </div>
+            
+            <div class="profile-metadata">
+                <div class="metadata-item">
+                    <div class="metadata-value">{{ total_posts }}</div>
+                    <div class="metadata-label">Posts</div>
+                </div>
+                <div class="metadata-item">
+                    <div class="metadata-value">{{ total_stars }}</div>
+                    <div class="metadata-label">Stars</div>
+                </div>
+                <div class="metadata-item">
+                    <div class="metadata-value">{{ total_views }}</div>
+                    <div class="metadata-label">Views</div>
+                </div>
+                <div class="metadata-item">
+                    <div class="metadata-value">{{ total_comments }}</div>
+                    <div class="metadata-label">Comments</div>
+                </div>
+                <div class="metadata-item">
+                    <a href="{% url 'user_followers' %}" class="follow-stat-link">
+                        <div class="metadata-value">{{ follower_count }}</div>
+                        <div class="metadata-label">Followers</div>
+                    </a>
+                </div>
+                <div class="metadata-item">
+                    <a href="{% url 'user_following' %}" class="follow-stat-link">
+                        <div class="metadata-value">{{ following_count }}</div>
+                        <div class="metadata-label">Following</div>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- About Me Section -->
+            <div class="about-me">
+                <div class="about-me-header">
+                    <h5><i class="fas fa-user me-2"></i>About Me</h5>
+                    {% if is_owner %}
+                    <a href="#" class="edit-button">
+                        <i class="fas fa-pencil-alt"></i>
+                    </a>
+                    {% endif %}
+                </div>
+                <p>{{ user.about_me|default:"No bio added yet." }}</p>
+            </div>
+
+            {% if not is_owner %}
+                {% if is_following %}
+                    <button id="follow-btn" class="btn btn-secondary mt-4 mb-0" data-user-id="{{ profile_user.id }}">
+                        <i class="fas fa-user-minus"></i> Unfollow
+                    </button>
+                {% else %}
+                    <button id="follow-btn" class="btn btn-primary mt-4 mb-0" data-user-id="{{ profile_user.id }}">
+                        <i class="fas fa-user-plus"></i> Follow
+                    </button>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Top Performing Posts Section -->
+    <div class="featured-section mb-4">
+        <h3 class="section-title">
+            <i class="fas fa-trophy"></i> Top Performing Posts
+        </h3>
+        {% if top_performing %}
+            <div class="featured-posts">
+                {% for note in top_performing %}
+                    <div class="featured-post-card">
+                        <h5 class="post-card-title">
+                            <a href="{% url 'note_detail' note.id %}" class="text-decoration-none">
+                                {{ note.title }}
+                            </a>
+                        </h5>
+                        <div class="post-card-metadata">
+                            <span><i class="fas fa-star text-warning"></i> {{ note.star_count }}</span>
+                            <span><i class="fas fa-eye"></i> {{ note.views_count }}</span>
+                            <span><i class="fas fa-chart-line text-success"></i> {{ note.performance_score }}</span>
+                            <span><i class="fas fa-calendar-alt"></i> {{ note.created_at|date:"M d, Y" }}</span>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-featured">
+                <i class="fas fa-trophy"></i>
+                <p>No posts yet</p>
+            </div>
+        {% endif %}
+    </div>
+    
+    <!-- All Posts Section -->
+    <div class="posts-section">
+        <h3 class="section-title main-title">
+            <i class="fas fa-file-alt"></i> All Posts
+        </h3>
+
+        {% if user_posts %}
+            <div class="notes-grid">
+                {% for note in user_posts %}
+                    <div class="note-card" data-category="{{ note.category }}" data-visibility="{% if note.is_public %}public{% else %}private{% endif %}">
+                        <div class="note-header">
+                            <span class="badge category-badge category-{{ note.category }}">
+                                {% if note.category == "other" %}
+                                    {{ note.other_category }}
+                                {% else %}
+                                    {{ note.get_category_display }}
+                                {% endif %}
+                            </span>
+                            
+                            <div class="note-actions">
+                                <button class="btn-star {% if note in starred_notes %}starred{% endif %}"
+                                data-note-id="{{ note.id }}">
+                                    <i class="fas fa-star"></i>
+                                    <span class="star-count">{{ note.star_count }}</span>
+                                </button>
+                                
+                                <a href="{% url 'toggle_bookmark' note.id %}" class="btn btn-bookmark {% if note in bookmarked_notes %}bookmarked{% endif %}" data-note-id="{{ note.id }}">
+                                    <i class="fas fa-bookmark"></i>
+                                </a>
+                            </div>
+                        </div>
+                        
+                        {% if note.preview_image %}
+                            <div class="note-image">
+                                <img src="data:{{ note.preview_image.file_type }};base64,{{ note.preview_image.file_data_base64 }}" alt="{{ note.title }}">
+                            </div>
+                        {% endif %}
+                        
+                        <a href="{% url 'note_detail' note.id %}" class="note-title-link">
+                            <h4 class="note-title">{{ note.title|truncatechars:45 }}</h4>
+                        </a>
+                        
+                        <p class="note-excerpt">{{ note.main_content|striptags|truncatechars:120 }}</p>
+                        
+                        <div class="note-metadata">
+                            <small class="text-muted">
+                                {{ note.created_at|timesince }} ago
+                                <span class="ms-2">
+                                    {% if note.is_public %}
+                                    <i class="fas fa-globe" title="Public"></i>
+                                    {% else %}
+                                    <i class="fas fa-lock" title="Private"></i>
+                                    {% endif %}
+                                </span>
+                            </small>
+
+                            <div class="note-stats">
+                                <span class="me-2">
+                                    <i class="fas fa-eye"></i> {{ note.views_count }}
+                                </span>
+                                <span>
+                                    <i class="fas fa-comment"></i> {{ note.comment_count }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-center py-5 empty-state">
+                <i class="fas fa-file-alt"></i>
+                <h4>No posts yet</h4>
+                <p>Start creating your first post now!</p>
+                <a href="{% url 'create_post' %}" class="btn btn-primary mt-3">
+                    <i class="fas fa-plus me-2"></i>Create Post
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</main>
+    
+<style>
+    /* Base Styles */
+    body {
+        font-family: "Poppins", sans-serif;
+        background-color: #f8f9fc;
+        color: #2d3748;
+    }
+    
+    .container {
+        max-width: 1200px;
+    }
+    
+    /* Profile Card Styles */
+    .profile-card {
+        background: linear-gradient(135deg, #2c3e50, #1a252f);
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 12px 28px rgba(0,0,0,0.15);
+        margin-bottom: 2.5rem;
+    }
+    
+    .profile-header {
+        padding: 2.5rem 2rem;
+        text-align: center;
+        position: relative;
+        color: #fff;
+    }
+    
+    .profile-avatar-container {
+        position: relative;
+        width: 120px;
+        height: 120px;
+        margin: 0 auto 1.5rem;
+    }
+    
+    .profile-avatar {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        border: 2px solid rgba(255,255,255,0.2);
+        overflow: hidden;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        transition: transform 0.3s ease;
+    }
+    
+    .profile-avatar:hover {
+        transform: scale(1.05);
+    }
+    
+    .profile-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .edit-avatar-button {
+        position: absolute;
+        bottom: 5px;
+        right: 5px;
+    }
+    
+    .edit-avatar-button .btn {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(5px);
+        background-color: rgba(255, 255, 255, 0.3);
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        transition: all 0.2s ease;
+    }
+    
+    .edit-avatar-button .btn:hover {
+        background-color: rgba(255, 255, 255, 0.5);
+        transform: scale(1.1);
+    }
+    
+    .btn-icon i {
+        font-size: 0.9rem;
+    }
+    
+    .profile-identity {
+        margin-bottom: 1.5rem;
+    }
+    
+    .username-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 0.5rem;
+    }
+    
+    .profile-username {
+        font-size: 1.8rem;
+        font-weight: 700;
+        margin-bottom: 0;
+        margin-right: 8px;
+    }
+    
+    .edit-button {
+        color: rgba(255, 255, 255, 0.6);
+        width: 28px;
+        height: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        transition: all 0.2s ease;
+    }
+    
+    .edit-button:hover {
+        background-color: rgba(255, 255, 255, 0.2);
+        color: white;
+        text-decoration: none;
+    }
+    
+    .profile-fullname {
+        font-size: 1.1rem;
+        opacity: 0.8;
+        font-weight: 400;
+        margin-bottom: 0;
+    }
+    
+    .profile-metadata {
+        display: flex;
+        justify-content: center;
+        gap: 2rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .metadata-item {
+        text-align: center;
+    }
+    
+    .metadata-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+    }
+    
+    .metadata-label {
+        font-size: 0.8rem;
+        opacity: 0.7;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .follow-stat-link {
+        text-decoration: none;
+        color: inherit;
+        display: block;
+        transition: all 0.2s ease;
+    }
+    
+    .follow-stat-link:hover {
+        transform: translateY(-3px);
+        color: #fff;
+    }
+    
+    .follow-stat-link:hover .metadata-label {
+        opacity: 1;
+    }
+    
+    .about-me {
+        background-color: rgba(255,255,255,0.08);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-top: 1.5rem;
+        text-align: left;
+    }
+    
+    .about-me-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+    
+    .about-me h5 {
+        margin-bottom: 0;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+    }
+    
+    .about-me p {
+        margin-bottom: 0;
+        line-height: 1.6;
+    }
+    
+    /* Featured Section */
+    .featured-section {
+        background-color: white;
+        border-radius: 15px;
+        padding: 1.8rem;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    }
+    
+    .section-title {
+        font-size: 1.3rem;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+        color: #2d3748;
+        display: flex;
+        align-items: center;
+    }
+    
+    .section-title i {
+        margin-right: 0.7rem;
+    }
+    
+    .featured-posts {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .featured-post-card {
+        padding: 1rem;
+        border-radius: 8px;
+        background-color: #f8f9fc;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .featured-post-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    }
+    
+    .post-card-title {
+        font-weight: 600;
+        margin-bottom: 0.75rem;
+        font-size: 1.1rem;
+    }
+    
+    .post-card-title a {
+        color: #2d3748;
+        transition: color 0.2s ease;
+    }
+    
+    .post-card-metadata {
+        display: flex;
+        gap: 1rem;
+        color: #64748b;
+        font-size: 0.85rem;
+    }
+    
+    .post-card-metadata i {
+        margin-right: 0.3rem;
+    }
+    
+    .empty-featured {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem 0;
+        color: #a0aec0;
+    }
+    
+    .empty-featured i {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+        opacity: 0.6;
+    }
+    
+    .empty-featured p {
+        margin-bottom: 0;
+    }
+    
+    /* Posts Section */
+    .posts-section {
+        background-color: white;
+        border-radius: 15px;
+        padding: 1.8rem;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    }
+    
+    .notes-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1.5rem;
+    }
+    
+    .note-card {
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        padding: 1.25rem;
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 10px 15px rgba(0, 0, 0, 0.247);
+        transition: all 0.3s;
+        height: 100%;
+    }
+    
+    .note-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .note-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+    
+    .category-badge {
+        padding: 0.4em 0.8em;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        color: white;
+        text-transform: capitalize;
+    }
+    
+    .note-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+    
+    .btn-star {
+        background: none;
+        border: none;
+        color: #cbd5e0;
+        transition: all 0.2s ease;
+        padding: 0.25rem 0.5rem;
+        border-radius: 6px;
+    }
+    
+    .btn-star:hover {
+        color: gold;
+    }
+
+    .btn-star.starred {
+        color: gold;
+    }
+    
+    .star-count {
+        font-size: 0.85rem;
+    }
+    
+    .btn-bookmark {
+        background: none;
+        border: none;
+        color: #cbd5e0;
+        transition: all 0.2s ease;
+        padding: 0.25rem 0.5rem;
+        border-radius: 6px;
+    }
+    
+    .btn-bookmark:hover {
+        color: #2d3748;
+    }
+    
+    .btn-bookmark.bookmarked {
+        color: #2d3748;
+    }
+    
+    .note-image {
+        height: 180px;
+        overflow: hidden;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+    }
+    
+    .note-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.5s ease;
+    }
+    
+    .note-card:hover .note-image img {
+        transform: scale(1.05);
+    }
+    
+    .note-title-link {
+        text-decoration: none;
+    }
+    
+    .note-title {
+        font-weight: 600;
+        margin-bottom: 0.75rem;
+        font-size: 1.1rem;
+        color: #2d3748;
+        transition: color 0.2s ease;
+    }
+    
+    .note-excerpt {
+        color: #64748b;
+        margin-bottom: 1rem;
+        font-size: 0.9rem;
+        line-height: 1.6;
+    }
+    
+    .note-metadata {
+        margin-top: auto;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.85rem;
+    }
+    
+    .note-stats {
+        color: #64748b;
+    }
+    
+    .note-stats i {
+        margin-right: 0.3rem;
+    }
+    
+    .empty-state {
+        padding: 3rem 0;
+    }
+    
+    .empty-state i {
+        font-size: 3rem;
+        color: #a0aec0;
+        margin-bottom: 1.5rem;
+    }
+    
+    .empty-state h4 {
+        color: #4a5568;
+        margin-bottom: 0.5rem;
+    }
+    
+    .empty-state p {
+        color: #a0aec0;
+        margin-bottom: 1.5rem;
+    }
+    
+    /* Category badge styles - keeping existing styles */
+    .category-badge {
+        padding: 0.4em 0.8em;
+        font-size: 0.85rem;
+    }
+    
+    .category-physics {
+    background-color: #1e4a1f; /* Darker shade of green */
+}
+
+.category-chemistry {
+    background-color: #3b7a3d; /* Medium shade of green */
+}
+
+.category-biology {
+    background-color: #5cb85c; /* Lighter shade of green */
+}
+
+.category-astronomy {
+    background-color: #2f7731; /* Original green */
+}
+
+.category-environmental_science {
+    background-color: #4cae4c; /* Another shade of green */
+}
+
+/* Technology Subcategories */
+.category-computer_science {
+    background-color: #a80808; /* Darker shade of red */
+}
+
+.category-engineering {
+    background-color: #d9534f; /* Medium shade of red */
+}
+
+.category-information_technology {
+    background-color: #ee2c09; /* Original red */
+}
+
+.category-artificial_intelligence {
+    background-color: #ff5c5c; /* Lighter shade of red */
+}
+
+.category-data_science {
+    background-color: #ff7f7f; /* Another shade of red */
+}
+
+/* Other Categories */
+.category-mathematics {
+    background-color: #9c27b0; /* Original purple */
+}
+
+.category-history {
+    background-color: #FF9800; /* Original orange */
+}
+
+.category-arts {
+    background-color: #65c923; /* Original lime green */
+}
+
+.category-literature {
+    background-color: #8bc34a; /* Lighter shade of lime green */
+}
+
+.category-business {
+    background-color: #4caf50; /* Another shade of green */
+}
+
+.category-health_wellness {
+    background-color: #81c784; /* Lighter shade of green */
+}
+
+.category-language {
+    background-color: #a5d6a7; /* Very light shade of green */
+}
+
+.category-travel_culture {
+    background-color: #ffa726; /* Lighter shade of orange */
+}
+
+.category-personal_development {
+    background-color: #ffb74d; /* Very light shade of orange */
+}
+
+.category-hobbies {
+    background-color: #ffcc80; /* Another light shade of orange */
+}
+
+.category-education {
+    background-color: #ff9800; /* Original orange */
+}
+
+.category-politics {
+    background-color: #e64a19; /* Darker shade of orange */
+}
+
+.category-philosophy {
+    background-color: #ff7043; /* Lighter shade of orange */
+}
+
+.category-psychology {
+    background-color: #ff8a65; /* Another light shade of orange */
+}
+
+.category-food_cooking {
+    background-color: #f51c93; /* Original pink */
+}
+
+.category-sports_fitness {
+    background-color: #e91e63; /* Darker shade of pink */
+}
+
+.category-entertainment {
+    background-color: #ff4081; /* Lighter shade of pink */
+}
+
+.category-design {
+    background-color: #ff79b0; /* Very light shade of pink */
+}
+
+.category-spirituality {
+    background-color: #ffa6c2; /* Another light shade of pink */
+}
+
+.category-parenting {
+    background-color: #f06292; /* Medium shade of pink */
+}
+
+.category-diy_crafts {
+    background-color: #ec407a; /* Another shade of pink */
+}
+
+.category-gaming {
+    background-color: #6a156d; /* Another shade of pink */
+}
+
+.category-other {
+    background-color: #f51c93; /* Original pink */
+}
+    
+    /* Responsive Adjustments */
+    @media (max-width: 767.98px) {
+        .profile-metadata {
+            flex-wrap: wrap;
+            gap: 1.5rem 3rem;
+        }
+        
+        .metadata-item {
+            flex: 1 0 40%;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {        
+        // Use event delegation for star buttons
+        document.addEventListener('click', function(event) {
+            const starBtn = event.target.closest('.btn-star');
+            if (starBtn) {
+                event.preventDefault();
+                const noteId = starBtn.getAttribute('data-note-id');
+                toggleStar(noteId);
+            }
+        });
+
+        // Similar approach for bookmark buttons
+        document.addEventListener('click', function(event) {
+            const bookmarkBtn = event.target.closest('.btn-bookmark');
+            if (bookmarkBtn) {
+                event.preventDefault();
+                const noteId = bookmarkBtn.getAttribute('data-note-id');
+                toggleBookmark(noteId);
+            }
+        });
+    });
+    
+    // Star toggle function
+    function toggleStar(noteId) {
+        fetch(`/toggle-star/${noteId}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken'),
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            credentials: 'same-origin'
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            // Update UI based on response instead of reloading page
+            const starBtn = document.querySelector(`.btn-star[data-note-id="${noteId}"]`);
+            if (starBtn) {
+                if (data.starred) {
+                    starBtn.classList.add('starred');
+                } else {
+                    starBtn.classList.remove('starred');
+                }
+                // Update star count if available in the response
+                if (data.star_count !== undefined) {
+                    const starCount = starBtn.querySelector('.star-count');
+                    if (starCount) {
+                        starCount.textContent = data.star_count;
+                    }
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error toggling star:', error);
+            // Provide user feedback about the error
+            alert('Unable to star this post. Please try again later.');
+        });
+    }
+
+    // Bookmark toggle function
+    function toggleBookmark(noteId) {
+        const url = `/toggle-bookmark/${noteId}/`;
+        
+        fetch(url, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Accept': 'application/json'
+            },
+            credentials: 'same-origin'
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.status === 'success') {
+                // Toggle bookmarked class on the button
+                const bookmarkBtn = document.querySelector(`.btn-bookmark[data-note-id="${noteId}"]`);
+                if (bookmarkBtn) {
+                    bookmarkBtn.classList.toggle('bookmarked');
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error toggling bookmark:', error);
+            alert('Unable to bookmark this post. Please try again later.');
+        });
+    }
+    
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    // Follow/unfollow functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        // Handle follow/unfollow buttons
+        document.addEventListener('click', function(event) {
+            const followBtn = event.target.closest('#follow-btn, .follow-btn, .unfollow-btn');
+            if (followBtn) {
+                event.preventDefault();
+                event.stopPropagation();
+                const userId = followBtn.getAttribute('data-user-id');
+                toggleFollow(userId, followBtn);
+            }
+        });
+    });
+
+    // Toggle follow function
+    function toggleFollow(userId, buttonElement) {
+        fetch(`/follow/${userId}/`, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            credentials: 'same-origin'
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            // Handle profile page button (single button that toggles)
+            if (buttonElement.id === 'follow-btn') {
+                if (data.is_following) {
+                    buttonElement.innerHTML = '<i class="fas fa-user-minus"></i> Unfollow';
+                    buttonElement.classList.remove('btn-primary');
+                    buttonElement.classList.add('btn-secondary');
+                } else {
+                    buttonElement.innerHTML = '<i class="fas fa-user-plus"></i> Follow';
+                    buttonElement.classList.remove('btn-secondary');
+                    buttonElement.classList.add('btn-primary');
+                }
+                
+                // Update follower count if available
+                const followerCountElement = document.querySelector('.metadata-item:nth-child(5) .metadata-value');
+                if (followerCountElement && data.follower_count !== undefined) {
+                    followerCountElement.textContent = data.follower_count;
+                }
+            }
+            // Handle other button types as needed
+            
+            // If we need to refresh the page after follow/unfollow action
+            if (data.refresh_page) {
+                window.location.reload();
+            }
+        })
+        .catch(error => {
+            console.error('Error toggling follow:', error);
+            alert('Unable to update follow status. Please try again later.');
+        });
+    }
+</script>
+
+{% endblock %}

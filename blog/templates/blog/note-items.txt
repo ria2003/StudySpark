@@ -1,0 +1,86 @@
+{% for note in recent_notes %}
+<article class="note-item mb-4">
+    <div class="d-flex align-items-center mb-3">
+        <img src="{{ note.user.profile_pic.url }}"
+             class="rounded-circle me-2" 
+             width="40" height="40" 
+             alt="{{ note.user.username }}">
+        <div class="post-meta">
+            <div class="d-flex align-items-center">
+                <a href="{% url 'user_profile_view' note.user.id %}" class="author-name text-decoration-none">
+                    {{ note.user.username }}
+                </a>
+                
+                
+                
+            </div>
+            <div class="post-date text-muted">{{ note.created_at|date:"M d, Y" }}</div>
+        </div>
+        <div class="ms-auto d-flex align-items-center">
+            <button class="btn btn-md btn-star me-2 {% if note in starred_notes %}starred{% endif %}"
+                    data-note-id="{{ note.id }}">
+                <i class="fas fa-star"></i>
+                <span class="star-count">{{ note.star_count }}</span>
+            </button>
+            
+            <button class="btn btn-md btn-bookmark {% if note in bookmarked_notes %}bookmarked{% endif %}"
+                    data-note-id="{{ note.id }}">
+                <i class="fas fa-bookmark"></i>
+            </button>
+
+            <!-- Follow Button (only show if not current user) -->
+            {% if note.user != request.user and request.user.is_authenticated %}
+            <button class="btn btn-sm follow-btn ms-4 {% if note.user in followed_users %}following{% endif %}"
+                    data-user-id="{{ note.user.id }}">
+                <i class="fas {% if note.user in followed_users %}fa-user-check{% else %}fa-user-plus{% endif %}"></i>
+                <span class="follow-text">{% if note.user in followed_users %}Following{% else %}Follow{% endif %}</span>
+            </button>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="{% if note.preview_image %}col-md-7{% else %}col-11{% endif %}">
+            <h4 class="post-title mb-2">
+                <a href="{% url 'note_detail' note.id %}" class="text-dark text-decoration-none">
+                    {{ note.title }}
+                </a>
+            </h4>
+            <p class="post-excerpt text-muted" style="font-size: 14px;">
+                {{ note.description|truncatechars:150 }}
+            </p>
+            
+            <div class="post-footer d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center">
+                    <span class="badge category-badge category-{{ note.category|lower }} me-2">
+                        {% if note.category == "other" %}
+                            {{ note.other_category }}
+                        {% else %}
+                            {{ note.get_category_display }}
+                        {% endif %}
+                    </span>
+                    <span class="text-muted">{{ note.views_count }} views</span>
+                </div>
+            </div>
+        </div>
+        
+        {% with image_data=note.get_first_content_image_data %}
+            {% if image_data.0 %}
+            <div class="col-md-4 ms-4">
+                <div class="note-image-wrapper">
+                    {% if image_data.0 == 'url' %}
+                        <img src="{{ image_data.1 }}"
+                            class="note-preview-image" 
+                            alt="Preview for {{ note.title }}">
+                    {% else %}
+                        <img src="data:{{ image_data.0 }};base64,{{ image_data.1 }}"
+                            class="note-preview-image" 
+                            alt="Preview for {{ note.title }}">
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        {% endwith %}
+    </div>
+</article>
+{% endfor %}
