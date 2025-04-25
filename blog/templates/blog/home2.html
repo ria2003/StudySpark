@@ -2,6 +2,16 @@
 
 {% block content %}
 <div class="container-fluid main-div">
+    {% if messages %}
+    <div class="messages">
+        {% for message in messages %}
+            <div class="alert {% if message.tags %}alert-{{ message.tags }}{% else %}alert-info{% endif %} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    </div> 
+    {% endif %}
     <!-- Quote Section -->
     <div class="quote-section">
         <div class="quote-container">
