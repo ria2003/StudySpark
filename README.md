@@ -37,7 +37,6 @@ StudySpark is a full-stack blogging platform designed to foster a collaborative 
 | **Database** | PostgreSQL |
 | **AI Integration** | Gemini Flash API (Summarization & Quiz) |
 | **Authentication** | Google OAuth |
-| **Real-Time** |  SSE (Server-Sent Events) |
 
 ---
 
