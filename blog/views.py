@@ -1502,3 +1502,112 @@ def bookmarked_notes(request):
     }
     
     return render(request, 'blog/bookmarked_notes.html', context)
+
+
+# views.py
+
+import json
+from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
+
+@login_required
+@require_POST
+def update_profile(request):
+    """Handle profile update requests for text fields (username, about_me)"""
+    try:
+        data = json.loads(request.body)
+        field = data.get('field')
+        value = data.get('value')
+        
+        user = request.user
+        
+        if field == 'username':
+            # Check if username is available
+            from django.contrib.auth import get_user_model
+            User = get_user_model()
+            
+            if User.objects.filter(username=value).exclude(id=user.id).exists():
+                return JsonResponse({
+                    'status': 'error',
+                    'message': 'This username is already taken.',
+                    'original_username': user.username
+                })
+            
+            # Update username
+            user.username = value
+            user.save()
+            
+            return JsonResponse({
+                'status': 'success',
+                'message': 'Username updated successfully.'
+            })
+            
+        elif field == 'about_me':
+            # Update about_me field
+            user.about_me = value
+            user.save()
+            
+            return JsonResponse({
+                'status': 'success',
+                'message': 'Bio updated successfully.'
+            })
+            
+        else:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Invalid field specified.'
+            }, status=400)
+            
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        }, status=500)
+
+@login_required
+@require_POST
+def update_profile_pic(request):
+    """Handle profile picture update requests"""
+    try:
+        if 'profile_pic' not in request.FILES:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'No file uploaded'
+            }, status=400)
+        
+        user = request.user
+        
+        # Handle the file upload
+        profile_pic = request.FILES['profile_pic']
+        
+        # Validate file type
+        allowed_types = ['image/jpeg', 'image/png', 'image/gif']
+        if profile_pic.content_type not in allowed_types:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Only JPEG, PNG and GIF images are allowed.'
+            }, status=400)
+            
+        # Validate file size (limit to 5MB)
+        if profile_pic.size > 5 * 1024 * 1024:  # 5MB in bytes
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Image size should be less than 5MB.'
+            }, status=400)
+        
+        # Save the new profile picture
+        user.profile_pic = profile_pic
+        user.save()
+        
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Profile picture updated successfully.',
+            'profile_pic_url': user.profile_pic.url
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        }, status=500)

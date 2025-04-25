@@ -965,6 +965,371 @@
             alert('Unable to update follow status. Please try again later.');
         });
     }
+
+// Add this code to your existing JavaScript section or create a new script tag
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Set up click handlers for edit buttons
+    setupEditButtonHandlers();
+    setupProfilePicEdit();
+});
+
+function setupEditButtonHandlers() {
+    // Username edit handler
+    const usernameEditBtn = document.querySelector('.username-container .edit-button');
+    if (usernameEditBtn) {
+        usernameEditBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            makeUsernameEditable();
+        });
+    }
+    
+    // About me edit handler
+    const aboutMeEditBtn = document.querySelector('.about-me-header .edit-button');
+    if (aboutMeEditBtn) {
+        aboutMeEditBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            makeAboutMeEditable();
+        });
+    }
+}
+
+function setupProfilePicEdit() {
+    const editAvatarBtn = document.querySelector('.edit-avatar-button .btn');
+    if (editAvatarBtn) {
+        editAvatarBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Create a hidden file input
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = 'image/*';
+            fileInput.style.display = 'none';
+            document.body.appendChild(fileInput);
+            
+            // Trigger the file dialog
+            fileInput.click();
+            
+            // Handle file selection
+            fileInput.addEventListener('change', function() {
+                if (fileInput.files && fileInput.files[0]) {
+                    uploadProfilePicture(fileInput.files[0]);
+                }
+                
+                // Remove the input element after use
+                document.body.removeChild(fileInput);
+            });
+        });
+    }
+}
+
+function makeUsernameEditable() {
+    const usernameElement = document.querySelector('.profile-username');
+    const currentUsername = usernameElement.textContent.trim();
+    
+    // Create input field
+    const inputField = document.createElement('input');
+    inputField.type = 'text';
+    inputField.value = currentUsername;
+    inputField.className = 'form-control username-edit';
+    inputField.style.width = '200px';
+    inputField.style.display = 'inline-block';
+    
+    // Create save button
+    const saveBtn = document.createElement('button');
+    saveBtn.className = 'btn btn-sm btn-primary ms-2';
+    saveBtn.innerHTML = '<i class="fas fa-check"></i>';
+    
+    // Create cancel button
+    const cancelBtn = document.createElement('button');
+    cancelBtn.className = 'btn btn-sm btn-secondary ms-1';
+    cancelBtn.innerHTML = '<i class="fas fa-times"></i>';
+    
+    // Replace username with input and buttons
+    usernameElement.innerHTML = '';
+    usernameElement.appendChild(inputField);
+    usernameElement.appendChild(saveBtn);
+    usernameElement.appendChild(cancelBtn);
+    
+    // Focus the input field
+    inputField.focus();
+    
+    // Handle save button click
+    saveBtn.addEventListener('click', function() {
+        const newUsername = inputField.value.trim();
+        if (newUsername && newUsername !== currentUsername) {
+            saveUsername(newUsername);
+        } else {
+            // Restore original username if empty or unchanged
+            usernameElement.textContent = currentUsername;
+        }
+    });
+    
+    // Handle cancel button click
+    cancelBtn.addEventListener('click', function() {
+        usernameElement.textContent = currentUsername;
+    });
+    
+    // Handle Enter key
+    inputField.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            saveBtn.click();
+        }
+    });
+    
+    // Handle Escape key
+    inputField.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            cancelBtn.click();
+        }
+    });
+}
+
+function makeAboutMeEditable() {
+    const aboutMeContainer = document.querySelector('.about-me');
+    const aboutMeText = aboutMeContainer.querySelector('p');
+    const currentContent = aboutMeText.textContent.trim();
+    
+    // Create textarea
+    const textarea = document.createElement('textarea');
+    textarea.className = 'form-control about-me-edit';
+    textarea.value = currentContent === 'No bio added yet.' ? '' : currentContent;
+    textarea.rows = 4;
+    textarea.style.marginBottom = '10px';
+    
+    // Create save button
+    const saveBtn = document.createElement('button');
+    saveBtn.className = 'btn btn-sm btn-primary me-2';
+    saveBtn.textContent = 'Save';
+    
+    // Create cancel button
+    const cancelBtn = document.createElement('button');
+    cancelBtn.className = 'btn btn-sm btn-secondary';
+    cancelBtn.textContent = 'Cancel';
+    
+    // Create button container
+    const btnContainer = document.createElement('div');
+    btnContainer.className = 'text-end';
+    btnContainer.appendChild(saveBtn);
+    btnContainer.appendChild(cancelBtn);
+    
+    // Replace content with textarea and buttons
+    aboutMeText.replaceWith(textarea);
+    aboutMeContainer.appendChild(btnContainer);
+    
+    // Focus the textarea
+    textarea.focus();
+    
+    // Handle save button click
+    saveBtn.addEventListener('click', function() {
+        const newContent = textarea.value.trim();
+        saveAboutMe(newContent);
+    });
+    
+    // Handle cancel button click
+    cancelBtn.addEventListener('click', function() {
+        // Restore original content
+        aboutMeContainer.removeChild(btnContainer);
+        textarea.replaceWith(aboutMeText);
+    });
+}
+
+function saveUsername(newUsername) {
+    // Show loading indicator
+    showLoadingIndicator('Saving username...');
+    
+    fetch('/update-profile/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken'),
+        },
+        body: JSON.stringify({
+            field: 'username',
+            value: newUsername
+        })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Server returned ' + response.status);
+        }
+        return response.json();
+    })
+    .then(data => {
+        hideLoadingIndicator();
+        
+        if (data.status === 'success') {
+            // Update the UI with the new username
+            document.querySelector('.profile-username').textContent = newUsername;
+            showSuccessToast('Username updated successfully!');
+        } else {
+            // Show error message
+            document.querySelector('.profile-username').textContent = data.original_username;
+            showErrorToast(data.message || 'Failed to update username.');
+        }
+    })
+    .catch(error => {
+        hideLoadingIndicator();
+        console.error('Error:', error);
+        // Restore original username on error
+        const usernameElement = document.querySelector('.profile-username');
+        usernameElement.textContent = usernameElement.getAttribute('data-original');
+        showErrorToast('An error occurred while updating your username.');
+    });
+}
+
+function saveAboutMe(newContent) {
+    // Show loading indicator
+    showLoadingIndicator('Saving bio...');
+    
+    fetch('/update-profile/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken'),
+        },
+        body: JSON.stringify({
+            field: 'about_me',
+            value: newContent
+        })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Server returned ' + response.status);
+        }
+        return response.json();
+    })
+    .then(data => {
+        hideLoadingIndicator();
+        
+        if (data.status === 'success') {
+            // Update the UI with the new about me text
+            const aboutMeContainer = document.querySelector('.about-me');
+            
+            // Remove the edit elements
+            const btnContainer = aboutMeContainer.querySelector('div:last-child');
+            const textarea = aboutMeContainer.querySelector('textarea');
+            
+            // Create new paragraph with the content
+            const newPara = document.createElement('p');
+            newPara.textContent = newContent || 'No bio added yet.';
+            
+            // Replace textarea with the new paragraph
+            textarea.replaceWith(newPara);
+            aboutMeContainer.removeChild(btnContainer);
+            
+            showSuccessToast('Bio updated successfully!');
+        } else {
+            showErrorToast(data.message || 'Failed to update bio.');
+        }
+    })
+    .catch(error => {
+        hideLoadingIndicator();
+        console.error('Error:', error);
+        showErrorToast('An error occurred while updating your bio.');
+    });
+}
+
+function uploadProfilePicture(file) {
+    // Create FormData object
+    const formData = new FormData();
+    formData.append('profile_pic', file);
+    formData.append('field', 'profile_pic');
+    
+    // Show loading indicator
+    showLoadingIndicator('Uploading profile picture...');
+    
+    fetch('/update-profile-pic/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            // Don't set Content-Type here, it will be set automatically with the boundary
+        },
+        body: formData
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Server returned ' + response.status);
+        }
+        return response.json();
+    })
+    .then(data => {
+        hideLoadingIndicator();
+        
+        if (data.status === 'success') {
+            // Update the profile picture in the UI
+            const profileImg = document.querySelector('.profile-avatar img');
+            
+            // Force browser to reload the image by adding a timestamp query param
+            profileImg.src = data.profile_pic_url + '?t=' + new Date().getTime();
+            
+            showSuccessToast('Profile picture updated successfully!');
+        } else {
+            showErrorToast(data.message || 'Failed to update profile picture.');
+        }
+    })
+    .catch(error => {
+        hideLoadingIndicator();
+        console.error('Error:', error);
+        showErrorToast('An error occurred while updating your profile picture.');
+    });
+}
+
+// Toast notification functions
+function showSuccessToast(message) {
+    // You can use Bootstrap toasts or a custom solution
+    alert(message); // Simple fallback
+}
+
+function showErrorToast(message) {
+    // You can use Bootstrap toasts or a custom solution
+    alert('Error: ' + message); // Simple fallback
+}
+
+// Loading indicator functions
+function showLoadingIndicator(message) {
+    // Create or show a loading spinner/overlay
+    const loadingOverlay = document.createElement('div');
+    loadingOverlay.id = 'loading-overlay';
+    loadingOverlay.style.position = 'fixed';
+    loadingOverlay.style.top = '0';
+    loadingOverlay.style.left = '0';
+    loadingOverlay.style.width = '100%';
+    loadingOverlay.style.height = '100%';
+    loadingOverlay.style.backgroundColor = 'rgba(0,0,0,0.5)';
+    loadingOverlay.style.display = 'flex';
+    loadingOverlay.style.justifyContent = 'center';
+    loadingOverlay.style.alignItems = 'center';
+    loadingOverlay.style.zIndex = '9999';
+    
+    const loadingContent = document.createElement('div');
+    loadingContent.style.backgroundColor = 'white';
+    loadingContent.style.padding = '20px';
+    loadingContent.style.borderRadius = '5px';
+    loadingContent.style.textAlign = 'center';
+    
+    const spinner = document.createElement('div');
+    spinner.className = 'spinner-border text-primary';
+    spinner.setAttribute('role', 'status');
+    
+    const loadingText = document.createElement('div');
+    loadingText.className = 'mt-2';
+    loadingText.textContent = message || 'Loading...';
+    
+    loadingContent.appendChild(spinner);
+    loadingContent.appendChild(loadingText);
+    loadingOverlay.appendChild(loadingContent);
+    
+    document.body.appendChild(loadingOverlay);
+}
+
+function hideLoadingIndicator() {
+    // Remove the loading spinner/overlay
+    const loadingOverlay = document.getElementById('loading-overlay');
+    if (loadingOverlay) {
+        document.body.removeChild(loadingOverlay);
+    }
+}
 </script>
 
 {% endblock %}
