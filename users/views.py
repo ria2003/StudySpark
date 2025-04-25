@@ -9,10 +9,47 @@ import logging
 import requests
 from django.core.files.base import ContentFile
 from allauth.socialaccount.models import SocialAccount
+from django.contrib.auth.views import (
+    PasswordResetView, 
+    PasswordResetDoneView, 
+    PasswordResetConfirmView, 
+    PasswordResetCompleteView
+)
+from django.urls import reverse_lazy
 
 
 
 logger = logging.getLogger(__name__)
+
+# Custom Password Reset View that filters out Google-authenticated users
+class CustomPasswordResetView(PasswordResetView):
+    template_name = 'users/password_reset_form.html'
+    email_template_name = 'users/password_reset_email.html'
+    subject_template_name = 'users/password_reset_subject.txt'
+    success_url = reverse_lazy('password_reset_done')
+    
+    def form_valid(self, form):
+        email = form.cleaned_data['email']
+        # Check if this email belongs to a Google-authenticated user
+        social_user = SocialAccount.objects.filter(user__email=email, provider='google').exists()
+        
+        if social_user:
+            # Add an error to the form if the user is authenticated via Google
+            form.add_error('email', 'This email is registered via Google. Please use Google Sign-In instead.')
+            return self.form_invalid(form)
+        
+        return super().form_valid(form)
+
+# Standard password reset views with custom templates
+class CustomPasswordResetDoneView(PasswordResetDoneView):
+    template_name = 'users/password_reset_done.html'
+
+class CustomPasswordResetConfirmView(PasswordResetConfirmView):
+    template_name = 'users/password_reset_confirm.html'
+    success_url = reverse_lazy('password_reset_complete')
+
+class CustomPasswordResetCompleteView(PasswordResetCompleteView):
+    template_name = 'users/password_reset_complete.html'
 
 def register(request):
     if request.method == 'POST':

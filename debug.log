@@ -14246,3 +14246,30 @@ Not Found: /favicon.ico
 Watching for file changes with StatReloader
 Watching for file changes with StatReloader
 Not Found: /favicon.ico
+Watching for file changes with StatReloader
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Received POST request for login
+Attempting login for user: alex.volkov
+User alex.volkov logged in successfully
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Received POST request for login
+Attempting login for user: yinyang
+Invalid login attempt for user: yinyang
+Received POST request for login
+Attempting login for user: yinyang
+Invalid login attempt for user: yinyang
+Not Found: /favicon.ico
+Form data received: {'csrfmiddlewaretoken': '92NqniAeWftHKqztkreCBgWyIxb0Ref5pu5GwmkRPlfSQ6PNSfxrFReA3fLHInFm', 'first_name': 'Yin', 'last_name': 'Yang', 'username': 'yinyang', 'email': 'yin.yanh.6969@gmail.com', 'about_me': '', 'interests': 'entertainment_creativity', 'profile_pic': ''}
+User yinyang created successfully
+Forbidden (CSRF token from POST incorrect.): /users/signin/
+Received POST request for login
+Attempting login for user: yinyang
+User yinyang logged in successfully
+Not Found: /favicon.ico
+Received POST request for login
+Attempting login for user: yinyang
+User yinyang logged in successfully
+Not Found: /favicon.ico

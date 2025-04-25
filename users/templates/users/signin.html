@@ -3,13 +3,11 @@
 {% block title %}Login - StudySpark{% endblock %}
 
 {% block content %}
-<!-- Add this right after the container div in both forms -->
-
-<div class="container" style="margin-top: 50px; margin-bottom: 20px;">
+<div class="container" style="margin-top: 20px; margin-bottom: 20px;">
     <div class="row justify-content-center">
         <div class="col-md-6">
             <div class="login-container shadow-lg rounded-3 p-4">
-                <h2 class="text-center mb-4">Login to StudySpark</h2>
+                <h2 class="text-center mb-4 mt-1">Login to StudySpark</h2>
                 
                 <form method="post" action="{% url 'login' %}" id="loginForm">
                     {% csrf_token %}
@@ -32,16 +30,16 @@
                             <input type="checkbox" class="form-check-input" id="rememberMe" name="remember_me">
                             <label class="form-check-label" for="rememberMe">Remember me</label>
                         </div>
-                        <a href="#" class="text-primary">Forgot Password?</a>
+                        <a href="{% url 'password_reset' %}" class="text-primary forgot-password-link">Forgot Password?</a>
                     </div>
-                    <button type="submit" class="btn w-100" style="background: linear-gradient(45deg, #176be9, #042e6d); color: white;">Sign In</button>
+                    <button type="submit" class="btn btn-primary w-100">Sign In</button>
                     <div class="text-center mt-3">
                         <p>or</p>
                         <a href="{% provider_login_url 'google' %}" class="btn btn-outline-danger w-100">
                             <i class="fab fa-google"></i> Login with Google
                         </a>
                     </div>
-                    <div class="text-center mt-3">
+                    <div class="text-center mt-3 mb-0">
                         <p style="margin: 0;">Don't have an account? <a href="{% url 'register' %}" class="text-primary">Sign Up</a></p>
                     </div>
                 </form>
@@ -79,4 +77,14 @@
         box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
     }
 </style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // When the login with Google button is clicked, hide the forgot password link
+        document.querySelector('a[href*="google"]').addEventListener('click', function() {
+            document.querySelector('.forgot-password-link').style.display = 'none';
+        });
+    });
+</script>
 {% endblock %}
+```

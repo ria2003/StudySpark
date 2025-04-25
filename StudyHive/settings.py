@@ -248,4 +248,17 @@ ACCOUNT_ADAPTER = 'users.adapters.CustomAccountAdapter'
 SOCIALACCOUNT_ADAPTER = 'users.adapters.CustomSocialAccountAdapter'
 SOCIALACCOUNT_AUTO_SIGNUP = True
 
+# Add these settings to your settings.py file
+
+# Email configuration
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'  # Or your email service provider
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'riajayanttambve@gmail.com'  # Your email
+EMAIL_HOST_PASSWORD = 'lxob ilyd yztz tjdi'  # Your email password or app password
+
+# For development/testing, you can use the console backend instead:
+# EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
 
