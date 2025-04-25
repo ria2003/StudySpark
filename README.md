@@ -41,12 +41,6 @@ StudySpark is a full-stack blogging platform designed to foster a collaborative 
 ---
 
 ## ✨ Future Enhancements
-🧠 AI-powered blog topic suggestions
-
-🌙 Dark mode toggle
-
 📈 Advanced blog analytics
 
 🎖️ Gamified badges for top contributors
-
-📥 Import/export notes in different formats (PDF, DOCX)
