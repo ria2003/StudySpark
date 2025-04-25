@@ -7,9 +7,10 @@
     <div class="container py-4 px-0">
         <div class="row justify-content-center">
             <div class="col-md-8">
+                <!-- Main Note Creation Form -->
                 <div class="card shadow-lg border-0">
                     <div class="card-header bg-primary text-white text-center py-4">
-                        <h2 class="mb-0"><i class="fas fa-lightbulb me-2"></i>Share Your Knowledge</h2>
+                        <h2 class="mb-0"><i class="fas fa-share-alt me-2"></i>Share Your Knowledge</h2>
                         <p class="mb-0 mt-2">Help others learn from your experience</p>
                     </div>
                     
@@ -28,7 +29,12 @@
                             {% endif %}
 
                             <div class="mb-4">
-                                <label class="form-label fw-bold"><i class="fas fa-heading me-2"></i>Title</label>
+                                <label class="form-label fw-bold d-flex justify-content-between align-items-center">
+                                    <div><i class="fas fa-heading me-2"></i>Title</div>
+                                    <button type="button" class="btn btn-sm creative-btn enhance-content" data-type="title">
+                                        <i class="fa-solid fa-wand-sparkles me-2"></i>Enhance with AI
+                                    </button>
+                                </label>
                                 {{ form.title }}
                             </div>
 
@@ -44,16 +50,25 @@
                             </div>
 
                             <div class="mb-4">
-                                <label class="form-label fw-bold"><i class="fas fa-align-left me-2"></i>Description</label>
+                                <label class="form-label fw-bold d-flex justify-content-between align-items-center">
+                                    <div><i class="fas fa-align-left me-2"></i>Description</div>
+                                    <button type="button" class="btn btn-sm creative-btn enhance-content" data-type="description">
+                                        <i class="fa-solid fa-wand-sparkles me-2"></i>Enhance with AI
+                                    </button>
+                                </label>
                                 {{ form.description }}
                             </div>
 
                             <div class="mb-4">
-                                <label class="form-label fw-bold">
-                                    <i class="fas fa-edit me-2"></i>Main Content
-                                    <small class="text-muted">(Optional: Add detailed notes, formatting, and images)</small>
+                                <label class="form-label fw-bold d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <i class="fas fa-edit me-2"></i>Main Content
+                                    </div>
+                                    
                                 </label>
-                                {{ form.main_content }}
+                                <div id="main-content-field">
+                                    {{ form.main_content }}
+                                </div>
                             </div>
 
                             <div class="mb-4">
@@ -79,12 +94,26 @@
     </div>
 </div>
 
+<!-- Loading Modal for AI Enhancements -->
+<div class="modal fade" id="enhancementModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body text-center p-4">
+                <div class="spinner-border text-primary mb-3" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <h5 id="enhancement-status-message">Enhancing your content...</h5>
+            </div>
+        </div>
+    </div>
+</div>
+
 <style>
 body {
-        font-family: "Poppins", serif;
-        font-weight: 400;
-        font-style: normal;
-    }
+    font-family: "Poppins", serif;
+    font-weight: 400;
+    font-style: normal;
+}
     
 .create-note-container {
     background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
@@ -119,10 +148,31 @@ body {
     transition: all 0.3s;
 }
 
-.btn-primary:hover {
+.btn-info {
+    background: linear-gradient(45deg, #2193b0, #6dd5ed);
+    border: none;
+    font-weight: 600;
+    color: white;
+    transition: all 0.3s;
+}
+
+.btn-primary:hover, .btn-info:hover, .btn-outline-primary:hover {
     transform: translateY(-2px);
     box-shadow: 0 5px 15px rgba(78, 84, 200, 0.4);
 }
+
+.creative-btn {
+    background-color: white;
+    border: 1px #4e0261 solid;
+    color: #4e0261;
+}
+
+.creative-btn:hover {
+    background: linear-gradient(45deg, #73038f, #3841eb);
+    color: white;
+
+}
+
 
 [name="other_category"] {
     margin-top: 10px;
@@ -167,20 +217,38 @@ body {
 .messages .btn-close{
     padding: 15px;
 }
+
+.enhanced {
+    animation: highlightGreen 2s ease;
+}
+
+@keyframes highlightGreen {
+    0% { border-color: #dee2e6; }
+    50% { border-color: #28a745; box-shadow: 0 0 0 0.25rem rgba(40, 167, 69, 0.25); }
+    100% { border-color: #dee2e6; }
+}
+
+.note-editor.enhanced {
+    border: 1px solid #28a745 !important;
+    box-shadow: 0 0 0 0.25rem rgba(40, 167, 69, 0.25) !important;
+    animation: none;
+    transition: all 0.5s ease;
+}
 </style>
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Original category functionality (keep this as is)
         const categorySelect = document.querySelector('select[name="category"]');
         const otherField = document.querySelector('input[name="other_category"]');
         
         categorySelect.addEventListener('change', function() {
             if (this.value === 'other') {
                 otherField.style.display = 'block';
-                otherField.setAttribute('required', 'required');  // Make it required if "Other" is selected
+                otherField.setAttribute('required', 'required');
             } else {
                 otherField.style.display = 'none';
-                otherField.removeAttribute('required');  // Remove required attribute if not needed
+                otherField.removeAttribute('required');
             }
         });
         
@@ -191,6 +259,75 @@ body {
         } else {
             otherField.style.display = 'none';
         }
+
+        // Content enhancement functionality
+const enhanceButtons = document.querySelectorAll('.enhance-content');
+enhanceButtons.forEach(button => {
+    button.addEventListener('click', function(e) {
+        e.preventDefault();
+        console.log("Enhance button clicked:", this.getAttribute('data-type'));
+        
+        const contentType = this.getAttribute('data-type');
+        let contentValue;
+        
+        // Get content based on type
+        if (contentType === 'title') {
+            contentValue = document.querySelector('input[name="title"]').value;
+        } else if (contentType === 'description') {
+            contentValue = document.querySelector('textarea[name="description"]').value;
+        }
+        
+        if (!contentValue || !contentValue.trim()) {
+            alert(`Please add some ${contentType.replace('_', ' ')} first.`);
+            return;
+        }
+        
+        // Show loading modal
+        const enhancementModal = new bootstrap.Modal(document.getElementById('enhancementModal'));
+        document.getElementById('enhancement-status-message').textContent = 
+            `Enhancing your ${contentType.replace('_', ' ')}...`;
+        enhancementModal.show();
+        
+        // Make API call
+        fetch('/enhance-content/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify({
+                type: contentType,
+                content: contentValue,
+                enhancement: 'improve'
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            bootstrap.Modal.getInstance(document.getElementById('enhancementModal')).hide();
+            
+            if (data.status === 'success') {
+                console.log("Enhancement successful!");
+                
+                if (contentType === 'title') {
+                    document.querySelector('input[name="title"]').value = data.enhanced_content;
+                    document.querySelector('input[name="title"]').classList.add('enhanced');
+                } else if (contentType === 'description') {
+                    document.querySelector('textarea[name="description"]').value = data.enhanced_content;
+                    document.querySelector('textarea[name="description"]').classList.add('enhanced');
+                }
+            } else {
+                alert("Error enhancing content: " + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            bootstrap.Modal.getInstance(document.getElementById('enhancementModal')).hide();
+            alert("An error occurred: " + error.message);
+        });
+    });
+});
+
+        
     });
 </script>
 {% endblock %}

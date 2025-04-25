@@ -2,7 +2,13 @@
 
 {% block content %}
 <div class="container my-4">
-    <h2>Your Followers</h2>
+    <h2>
+        {% if is_owner %}
+            Your Followers
+        {% else %}
+            {{ profile_user.username }}'s Followers
+        {% endif %}
+    </h2>
     
     <div class="card mt-4">
         {% if followers %}
@@ -20,17 +26,24 @@
                                         {{ follow.follower.username }}
                                     </a>
                                 </h5>
-                                <p class="text-muted small mb-0">Following you since {{ follow.created_at|date:"M d, Y" }}</p>
+                                <p class="text-muted small mb-0">Following {% if is_owner %}you{% else %}{{ profile_user.username }}{% endif %} since {{ follow.created_at|date:"M d, Y" }}</p>
                             </div>
                         </div>
                         <div>
-                            {% if follow.follower in user.following.all %}
-                                <span class="badge bg-success">
-                                    <i class="fas fa-sync"></i> You follow each other
+                            {% if follow.follower == request.user %}
+                                <!-- This is the current user -->
+                                <span class="badge bg-info">
+                                    <i class="fas fa-user"></i> This is you
                                 </span>
+                            {% elif follow.follower in request.user.following.all %}
+                                <!-- Current user already follows this person -->
+                                <button class="btn btn-sm btn-secondary unfollow-btn" data-user-id="{{ follow.follower.id }}">
+                                    <i class="fas fa-user-minus"></i> Unfollow
+                                </button>
                             {% else %}
+                                <!-- Current user doesn't follow this person yet -->
                                 <button class="btn btn-sm btn-primary follow-btn" data-user-id="{{ follow.follower.id }}">
-                                    <i class="fas fa-user-plus"></i> Follow Back
+                                    <i class="fas fa-user-plus"></i> Follow
                                 </button>
                             {% endif %}
                         </div>
@@ -41,8 +54,13 @@
             <div class="card-body text-center my-4">
                 <div class="empty-state">
                     <i class="fas fa-user-friends fa-3x text-muted mb-3"></i>
-                    <h4>No followers yet</h4>
-                    <p class="text-muted">When people follow you, you'll see them here.</p>
+                    {% if is_owner %}
+                        <h4>No followers yet</h4>
+                        <p class="text-muted">When people follow you, you'll see them here.</p>
+                    {% else %}
+                        <h4>No followers yet</h4>
+                        <p class="text-muted">When people follow {{ profile_user.username }}, they'll appear here.</p>
+                    {% endif %}
                 </div>
             </div>
         {% endif %}
@@ -51,8 +69,9 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Find all follow buttons on the page
+    // Find all follow/unfollow buttons on the page
     const followButtons = document.querySelectorAll('.follow-btn');
+    const unfollowButtons = document.querySelectorAll('.unfollow-btn');
     
     // Add click event listener to each follow button
     followButtons.forEach(button => {
@@ -71,18 +90,37 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(response => response.json())
             .then(data => {
                 if (data.is_following) {
-                    // Replace the button with "You follow each other" badge
+                    // Replace follow button with unfollow button
                     this.outerHTML = `
-                        <span class="badge bg-success">
-                            <i class="fas fa-sync"></i> You follow each other
-                        </span>
+                        <button class="btn btn-sm btn-secondary unfollow-btn" data-user-id="${userId}">
+                            <i class="fas fa-user-minus"></i> Unfollow
+                        </button>
                     `;
+                    
+                    // Add event listener to the new button
+                    const newButton = document.querySelector(`.unfollow-btn[data-user-id="${userId}"]`);
+                    if (newButton) {
+                        newButton.addEventListener('click', function() {
+                            const thisUserId = this.getAttribute('data-user-id');
+                            toggleFollow(thisUserId, this);
+                        });
+                    }
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
                 alert('Failed to follow user. Please try again.');
             });
+        });
+    });
+    
+    // Add click event listener to each unfollow button
+    unfollowButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            // Get the user ID from the button's data attribute
+            const userId = this.getAttribute('data-user-id');
+            
+            toggleFollow(userId, this);
         });
     });
     
@@ -100,6 +138,57 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         return cookieValue;
+    }
+    
+    // Function to toggle follow status
+    function toggleFollow(userId, buttonElement) {
+        fetch(`/follow/${userId}/`, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.is_following) {
+                // User is now following - show unfollow button
+                buttonElement.outerHTML = `
+                    <button class="btn btn-sm btn-secondary unfollow-btn" data-user-id="${userId}">
+                        <i class="fas fa-user-minus"></i> Unfollow
+                    </button>
+                `;
+                
+                // Add event listener to the new button
+                const newButton = document.querySelector(`.unfollow-btn[data-user-id="${userId}"]`);
+                if (newButton) {
+                    newButton.addEventListener('click', function() {
+                        const thisUserId = this.getAttribute('data-user-id');
+                        toggleFollow(thisUserId, this);
+                    });
+                }
+            } else {
+                // User is now not following - show follow button
+                buttonElement.outerHTML = `
+                    <button class="btn btn-sm btn-primary follow-btn" data-user-id="${userId}">
+                        <i class="fas fa-user-plus"></i> Follow
+                    </button>
+                `;
+                
+                // Add event listener to the new button
+                const newButton = document.querySelector(`.follow-btn[data-user-id="${userId}"]`);
+                if (newButton) {
+                    newButton.addEventListener('click', function() {
+                        const thisUserId = this.getAttribute('data-user-id');
+                        toggleFollow(thisUserId, this);
+                    });
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to update follow status. Please try again.');
+        });
     }
 });
 </script>

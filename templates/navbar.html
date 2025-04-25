@@ -7,9 +7,6 @@
       <div class="collapse navbar-collapse" id="navbarNav">
           <ul class="navbar-nav me-4">
               <li class="nav-item">
-                  <a class="nav-link" href="#"><i class="fa-solid fa-fire"></i> Trending</a>
-              </li>
-              <li class="nav-item">
                   <a class="create-btn nav-link" href="{% url 'create_post' %}"><i class="fa-solid fa-wand-magic-sparkles"></i> Create</a>
               </li>
               
@@ -55,21 +52,23 @@
                     <li><a class="dropdown-item" href="{% url 'user_notes' %}"><i class="fa-solid fa-note-sticky me-2"></i>My Posts</a></li>
                     <li><hr class="dropdown-divider"></li>
                     <li>
+                        <a class="dropdown-item" href="{% url 'bookmarked_notes' %}">
+                          <i class="fa-solid fa-bookmark me-2"></i> Bookmarks
+                        </a>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
                       <a class="dropdown-item" href="{% url 'user_following' %}">
-                          <i class="fas fa-user-plus"></i> People I Follow
-                      </a>
-                  </li>
-                  <li>
-                      <a class="dropdown-item" href="{% url 'user_followers' %}">
-                          <i class="fas fa-user-friends"></i> My Followers
+                          <i class="fas fa-user-plus me-2"></i> People I Follow
                       </a>
                   </li>
                   <li><hr class="dropdown-divider"></li>
                   <li>
-                      <a class="dropdown-item" href="{% url 'home' %}">
-                          <i class="fas fa-compass"></i> Discover People
+                      <a class="dropdown-item" href="{% url 'user_followers' %}">
+                          <i class="fas fa-user-friends me-2"></i> My Followers
                       </a>
                   </li>
+                  <li><hr class="dropdown-divider"></li>
                     <li><a class="dropdown-item text-danger" href="{% url 'logout' %}"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
                 </ul>
               </div>
@@ -272,13 +271,14 @@
 }
 
 .dropdown-item {
-  padding: 0.5rem 1rem;
-  font-weight: 500;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  font-weight: 400;
+  font-size: 15px;
 }
 
-.dropdown-item:hover {
-  background-color: #f8f9fa;
-}
 
 @media (max-width: 991.98px) {
   .search-container {

@@ -2,7 +2,13 @@
 
 {% block content %}
 <div class="container my-4">
-    <h2>People You Follow</h2>
+    <h2>
+        {% if is_owner %}
+            People You Follow
+        {% else %}
+            People {{ profile_user.username }} Follows
+        {% endif %}
+    </h2>
     
     <div class="card mt-4">
         {% if following %}
@@ -24,9 +30,30 @@
                             </div>
                         </div>
                         <div>
-                            <button class="btn btn-sm btn-secondary unfollow-btn" data-user-id="{{ follow.followed.id }}">
-                                <i class="fas fa-user-minus"></i> Unfollow
-                            </button>
+                            {% if is_owner %}
+                                <!-- Current user viewing their own following list - show unfollow button -->
+                                <button class="btn btn-sm btn-secondary unfollow-btn" data-user-id="{{ follow.followed.id }}">
+                                    <i class="fas fa-user-minus"></i> Unfollow
+                                </button>
+                            {% else %}
+                                <!-- Current user viewing someone else's following list -->
+                                {% if follow.followed == request.user %}
+                                    <!-- This is the current user's profile -->
+                                    <span class="badge bg-info">
+                                        <i class="fas fa-user"></i> This is you
+                                    </span>
+                                {% elif follow.followed in request.user.following.all %}
+                                    <!-- Current user already follows this person -->
+                                    <button class="btn btn-sm btn-secondary unfollow-btn" data-user-id="{{ follow.followed.id }}">
+                                        <i class="fas fa-user-minus"></i> Unfollow
+                                    </button>
+                                {% else %}
+                                    <!-- Current user doesn't follow this person yet -->
+                                    <button class="btn btn-sm btn-primary follow-btn" data-user-id="{{ follow.followed.id }}">
+                                        <i class="fas fa-user-plus"></i> Follow
+                                    </button>
+                                {% endif %}
+                            {% endif %}
                         </div>
                     </li>
                 {% endfor %}
@@ -35,9 +62,14 @@
             <div class="card-body text-center my-4">
                 <div class="empty-state">
                     <i class="fas fa-users fa-3x text-muted mb-3"></i>
-                    <h4>You're not following anyone yet</h4>
-                    <p class="text-muted">When you follow people, you'll see them here.</p>
-                    <a href="{% url 'home' %}" class="btn btn-primary mt-3">Discover People</a>
+                    {% if is_owner %}
+                        <h4>You're not following anyone yet</h4>
+                        <p class="text-muted">When you follow people, you'll see them here.</p>
+                        <a href="{% url 'home' %}" class="btn btn-primary mt-3">Discover People</a>
+                    {% else %}
+                        <h4>{{ profile_user.username }} is not following anyone yet</h4>
+                        <p class="text-muted">When they follow people, you'll see them here.</p>
+                    {% endif %}
                 </div>
             </div>
         {% endif %}
@@ -46,19 +78,17 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Find all unfollow buttons on the page
+    // Find all follow/unfollow buttons on the page
+    const followButtons = document.querySelectorAll('.follow-btn');
     const unfollowButtons = document.querySelectorAll('.unfollow-btn');
     
-    // Add click event listener to each unfollow button
-    unfollowButtons.forEach(button => {
+    // Add click event listener to each follow button
+    followButtons.forEach(button => {
         button.addEventListener('click', function() {
             // Get the user ID from the button's data attribute
             const userId = this.getAttribute('data-user-id');
             
-            // Store reference to the list item for removal later
-            const listItem = this.closest('.list-group-item');
-            
-            // Send AJAX request to unfollow the user
+            // Send AJAX request to follow the user
             fetch(`/follow/${userId}/`, {
                 method: 'POST',
                 headers: {
@@ -68,28 +98,38 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .then(response => response.json())
             .then(data => {
-                if (!data.is_following) {
-                    // Remove the list item with a fade-out effect
-                    listItem.style.transition = 'opacity 0.3s ease';
-                    listItem.style.opacity = '0';
+                if (data.is_following) {
+                    // Replace follow button with unfollow button
+                    this.outerHTML = `
+                        <button class="btn btn-sm btn-secondary unfollow-btn" data-user-id="${userId}">
+                            <i class="fas fa-user-minus"></i> Unfollow
+                        </button>
+                    `;
                     
-                    // After the fade-out animation, remove the element
-                    setTimeout(() => {
-                        listItem.remove();
-                        
-                        // Check if there are any remaining users being followed
-                        const remainingItems = document.querySelectorAll('.list-group-item');
-                        if (remainingItems.length === 0) {
-                            // If no more users are being followed, display the empty state
-                            displayEmptyState();
-                        }
-                    }, 300);
+                    // Add event listener to the new button
+                    const newButton = document.querySelector(`.unfollow-btn[data-user-id="${userId}"]`);
+                    if (newButton) {
+                        newButton.addEventListener('click', function() {
+                            const thisUserId = this.getAttribute('data-user-id');
+                            toggleFollow(thisUserId, this);
+                        });
+                    }
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('Failed to unfollow user. Please try again.');
+                alert('Failed to follow user. Please try again.');
             });
+        });
+    });
+    
+    // Add click event listener to each unfollow button
+    unfollowButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            // Get the user ID from the button's data attribute
+            const userId = this.getAttribute('data-user-id');
+            
+            toggleFollow(userId, this);
         });
     });
     
@@ -109,19 +149,55 @@ document.addEventListener('DOMContentLoaded', function() {
         return cookieValue;
     }
     
-    // Function to display empty state when no users are being followed
-    function displayEmptyState() {
-        const container = document.querySelector('.card');
-        container.innerHTML = `
-            <div class="card-body text-center my-4">
-                <div class="empty-state">
-                    <i class="fas fa-users fa-3x text-muted mb-3"></i>
-                    <h4>You're not following anyone yet</h4>
-                    <p class="text-muted">When you follow people, you'll see them here.</p>
-                    <a href="{% url 'home' %}" class="btn btn-primary mt-3">Discover People</a>
-                </div>
-            </div>
-        `;
+    // Function to toggle follow status
+    function toggleFollow(userId, buttonElement) {
+        fetch(`/follow/${userId}/`, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.is_following) {
+                // User is now following - show unfollow button
+                buttonElement.outerHTML = `
+                    <button class="btn btn-sm btn-secondary unfollow-btn" data-user-id="${userId}">
+                        <i class="fas fa-user-minus"></i> Unfollow
+                    </button>
+                `;
+                
+                // Add event listener to the new button
+                const newButton = document.querySelector(`.unfollow-btn[data-user-id="${userId}"]`);
+                if (newButton) {
+                    newButton.addEventListener('click', function() {
+                        const thisUserId = this.getAttribute('data-user-id');
+                        toggleFollow(thisUserId, this);
+                    });
+                }
+            } else {
+                // User is now not following - show follow button
+                buttonElement.outerHTML = `
+                    <button class="btn btn-sm btn-primary follow-btn" data-user-id="${userId}">
+                        <i class="fas fa-user-plus"></i> Follow
+                    </button>
+                `;
+                
+                // Add event listener to the new button
+                const newButton = document.querySelector(`.follow-btn[data-user-id="${userId}"]`);
+                if (newButton) {
+                    newButton.addEventListener('click', function() {
+                        const thisUserId = this.getAttribute('data-user-id');
+                        toggleFollow(thisUserId, this);
+                    });
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to update follow status. Please try again.');
+        });
     }
 });
 </script>

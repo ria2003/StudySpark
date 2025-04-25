@@ -1,0 +1,196 @@
+{% extends 'base.html' %}
+
+{% block title %}Share Your Knowledge - StudySpark{% endblock %}
+
+{% block content %}
+<div class="create-note-container">
+    <div class="container py-4 px-0">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card shadow-lg border-0">
+                    <div class="card-header bg-primary text-white text-center py-4">
+                        <h2 class="mb-0"><i class="fas fa-lightbulb me-2"></i>Share Your Knowledge</h2>
+                        <p class="mb-0 mt-2">Help others learn from your experience</p>
+                    </div>
+                    
+                    <div class="card-body p-4">
+                        <form method="POST" enctype="multipart/form-data" id="noteForm">
+                            {% csrf_token %}
+                            {% if messages %}
+                            <div class="messages">
+                                {% for message in messages %}
+                                    <div class="alert {% if message.tags %}alert-{{ message.tags }}{% else %}alert-info{% endif %} alert-dismissible fade show" role="alert">
+                                        {{ message }}
+                                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                    </div>
+                                {% endfor %}
+                            </div> 
+                            {% endif %}
+
+                            <div class="mb-4">
+                                <label class="form-label fw-bold"><i class="fas fa-heading me-2"></i>Title</label>
+                                {{ form.title }}
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label fw-bold"><i class="fas fa-folder me-2"></i>Category</label>
+                                {{ form.category }}
+                                {{ form.other_category }}
+                                {% if form.other_category.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.other_category.errors.0 }}
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label fw-bold"><i class="fas fa-align-left me-2"></i>Description</label>
+                                {{ form.description }}
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">
+                                    <i class="fas fa-edit me-2"></i>Main Content
+                                    <small class="text-muted">(Optional: Add detailed notes, formatting, and images)</small>
+                                </label>
+                                {{ form.main_content }}
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label fw-bold"><i class="fas fa-tags me-2"></i>Tags</label>
+                                {{ form.tags }}
+                            </div>
+
+                            <div class="mb-4">
+                                <div class="form-check form-switch">
+                                    {{ form.is_public }}
+                                    <label class="form-check-label">Make this note public</label>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary w-100 py-2">
+                                <i class="fas fa-share me-2"></i>Share Your Notes
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+body {
+        font-family: "Poppins", serif;
+        font-weight: 400;
+        font-style: normal;
+    }
+    
+.create-note-container {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    min-height: 100vh;
+    margin-bottom: 20px;
+}
+
+.card {
+    border-radius: 15px;
+    overflow: hidden;
+}
+
+.card-header {
+    background: linear-gradient(45deg, #4e54c8, #8f94fb);
+}
+
+.form-control:not(.search-input), .form-select {
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+    padding: 12px;
+    transition: all 0.3s;
+}
+
+.form-control:focus, .form-select:focus {
+    box-shadow: 0 0 0 0.25rem rgba(78, 84, 200, 0.25);
+}
+
+.btn-primary {
+    background: linear-gradient(45deg, #4e54c8, #8f94fb);
+    border: none;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(78, 84, 200, 0.4);
+}
+
+[name="other_category"] {
+    margin-top: 10px;
+    transition: all 0.3s ease;
+}
+
+[name="other_category"].show {
+    display: block;
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.messages .alert {
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+}
+
+.messages .alert-success {
+    color: #155724;
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+}
+
+.messages .alert-error {
+    color: #721c24;
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+}
+
+.messages .btn-close{
+    padding: 15px;
+}
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const categorySelect = document.querySelector('select[name="category"]');
+        const otherField = document.querySelector('input[name="other_category"]');
+        
+        categorySelect.addEventListener('change', function() {
+            if (this.value === 'other') {
+                otherField.style.display = 'block';
+                otherField.setAttribute('required', 'required');  // Make it required if "Other" is selected
+            } else {
+                otherField.style.display = 'none';
+                otherField.removeAttribute('required');  // Remove required attribute if not needed
+            }
+        });
+        
+        // Initial check for the category value
+        if (categorySelect.value === 'other') {
+            otherField.style.display = 'block';
+            otherField.setAttribute('required', 'required');
+        } else {
+            otherField.style.display = 'none';
+        }
+    });
+</script>
+{% endblock %}

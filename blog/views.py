@@ -1424,14 +1424,38 @@ def follow_user(request, user_id):
     return redirect('user_profile_view', user_id=user_id)
 
 @login_required
-def user_following(request):
-    following = Follow.objects.filter(follower=request.user).select_related('followed')
-    return render(request, 'blog/user_following.html', {'following': following})
+def user_following(request, user_id=None):
+    # If no user_id is provided, show the current user's following
+    if user_id is None:
+        user = request.user
+    else:
+        user = get_object_or_404(User, id=user_id)
+    
+    following = Follow.objects.filter(follower=user).select_related('followed')
+    
+    # Pass the profile owner to the template
+    return render(request, 'blog/user_following.html', {
+        'following': following,
+        'profile_user': user,
+        'is_owner': user == request.user
+    })
 
 @login_required
-def user_followers(request):
-    followers = Follow.objects.filter(followed=request.user).select_related('follower')
-    return render(request, 'blog/user_followers.html', {'followers': followers})
+def user_followers(request, user_id=None):
+    # If no user_id is provided, show the current user's followers
+    if user_id is None:
+        user = request.user
+    else:
+        user = get_object_or_404(User, id=user_id)
+    
+    followers = Follow.objects.filter(followed=user).select_related('follower')
+    
+    # Pass the profile owner to the template
+    return render(request, 'blog/user_followers.html', {
+        'followers': followers,
+        'profile_user': user,
+        'is_owner': user == request.user
+    })
 
 @login_required
 def bookmarked_notes(request):
@@ -1607,6 +1631,87 @@ def update_profile_pic(request):
         })
         
     except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        }, status=500)
+    
+@login_required
+@require_POST
+def enhance_content(request):
+    logger = logging.getLogger(__name__)
+    try:
+        # Configure Gemini API
+        genai.configure(api_key='AIzaSyC25rIRn5BegOUq5lYvj1p2CMPwhPDAGrQ')
+        
+        # Parse request data
+        data = json.loads(request.body)
+        content_type = data.get('type', 'description')  # 'title', 'description' or 'main_content'
+        original_content = data.get('content', '')
+        
+        if not original_content:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'No content provided to enhance'
+            }, status=400)
+        
+        # Create appropriate prompt based on content type
+        if content_type == 'title':
+            prompt = f"""
+            Enhance the following blog post title to make it more engaging, clear, and professional.
+            Focus on improving appeal without changing the core topic.
+            Keep it concise and catchy. Do not make it overly long. Give a single response.
+            
+            Original title:
+            {original_content}
+            
+            Enhanced title:
+            """
+        elif content_type == 'description':
+            prompt = f"""
+            Enhance the following blog post description to make it more engaging, clear, and professional.
+            Give a single option in repsonse without filler words.
+            Focus on improving language, clarity, and appeal without changing the core message. 
+            
+            Original description:
+            {original_content}
+            
+            Enhanced description:
+            """
+        else:  # main_content
+            prompt = f"""
+            Enhance the following blog post content to make it more engaging, well-structured, and professional.
+            Improve language, clarity, and structure without changing the core content.
+            Maintain all existing sections and key points but refine the presentation. Give a single response.
+            
+            Original content:
+            {original_content}
+            
+            Enhanced content:
+            """
+        
+        # Create Gemini model
+        model = genai.GenerativeModel('gemini-2.0-flash')
+        
+        # Generation configuration
+        generation_config = {
+            'temperature': 0.3,
+            'max_output_tokens': 2048
+        }
+        
+        # Generate enhanced content
+        response = model.generate_content(
+            prompt,
+            generation_config=generation_config
+        )
+        
+        return JsonResponse({
+            'status': 'success',
+            'enhanced_content': response.text.strip()
+        })
+            
+    except Exception as e:
+        logger.exception(f"Unexpected error in enhance_content: {e}")
         return JsonResponse({
             'status': 'error',
             'message': str(e)

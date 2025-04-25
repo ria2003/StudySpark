@@ -53,13 +53,13 @@
                     <div class="metadata-label">Comments</div>
                 </div>
                 <div class="metadata-item">
-                    <a href="{% url 'user_followers' %}" class="follow-stat-link">
+                    <a href="{% url 'user_followers' user.id %}" class="follow-stat-link">
                         <div class="metadata-value">{{ follower_count }}</div>
                         <div class="metadata-label">Followers</div>
                     </a>
                 </div>
                 <div class="metadata-item">
-                    <a href="{% url 'user_following' %}" class="follow-stat-link">
+                    <a href="{% url 'user_following' user.id %}" class="follow-stat-link">
                         <div class="metadata-value">{{ following_count }}</div>
                         <div class="metadata-label">Following</div>
                     </a>
