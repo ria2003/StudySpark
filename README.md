@@ -13,6 +13,7 @@ StudySpark is a full-stack blogging platform designed to foster a collaborative 
 - **Audio notes** – Listen to the notes for hands-free learning.
 
 ### 🤖 AI-Powered Tools
+- **AI Content Enhancement** - Write with help of AI
 - **AI Summary Generator** – Get concise blog summaries using Gemini Flash API.
 - **AI Quiz Generator** – Instantly create quizzes based on blog content.
 
