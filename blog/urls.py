@@ -1,5 +1,5 @@
 from django import views
-from django.urls import path, re_path
+from django.urls import include, path, re_path
 from .views import add_comment, bookmarked_notes, create_post, delete_comment, delete_note, delete_notification, edit_note, enhance_content, follow_user, generate_quiz, generate_summary, home, increment_view, note_detail, notification_stream, notifications, report_comment, search_notes, toggle_bookmark, toggle_star, update_profile, update_profile_pic, user_followers, user_following, user_notes, user_profile_view, vote_comment
 
 urlpatterns = [
@@ -43,4 +43,6 @@ urlpatterns = [
 
     path('followers/<int:user_id>/', user_followers, name='user_followers'),
     path('following/<int:user_id>/', user_following, name='user_following'),
+
+    path('summernote/', include('django_summernote.urls')),
 ]
