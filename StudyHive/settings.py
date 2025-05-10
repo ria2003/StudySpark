@@ -13,6 +13,16 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 from pathlib import Path
 import os
 from dotenv import load_dotenv
+import dj_database_url
+import os
+
+DEBUG = False
+ALLOWED_HOSTS = ['your-render-url.onrender.com']  # Will change once deployed
+
+DATABASES = {
+    'default': dj_database_url.config(default=os.environ.get('DATABASE_URL'))
+}
+
 
 # Load environment variables from .env file
 load_dotenv()
@@ -27,10 +37,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-77&)qksx12&ay!at=tep-ol7&5q@aggpw=fnw7pty-ortg#r$t'
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = []
 
 # settings.py
 LOGGING = {
@@ -97,6 +103,7 @@ SUMMERNOTE_CONFIG = {
 }
 
 MIDDLEWARE = [
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -155,6 +162,7 @@ WSGI_APPLICATION = 'StudyHive.wsgi.application'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 # settings.py
+'''
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -165,6 +173,8 @@ DATABASES = {
         'PORT': '5432',
     }
 }
+'''
+
 
 
 # Password validation
