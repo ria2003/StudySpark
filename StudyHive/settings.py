@@ -16,6 +16,9 @@ from dotenv import load_dotenv
 import dj_database_url
 import os
 
+# Load environment variables from .env file
+load_dotenv()
+
 DEBUG = False
 ALLOWED_HOSTS = ['your-render-url.onrender.com']  # Will change once deployed
 
@@ -23,9 +26,6 @@ DATABASES = {
     'default': dj_database_url.config(default=os.environ.get('DATABASE_URL'))
 }
 
-
-# Load environment variables from .env file
-load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
