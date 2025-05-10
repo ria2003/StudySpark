@@ -14499,3 +14499,96 @@ Watching for file changes with StatReloader
 Not Found: /favicon.ico
 Not Found: /favicon.ico
 Not Found: /favicon.ico
+Watching for file changes with StatReloader
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Watching for file changes with StatReloader
+Watching for file changes with StatReloader
+Not Found: /favicon.ico
+Watching for file changes with StatReloader
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Received POST request for login
+Attempting login for user: alex.volkov
+Invalid login attempt for user: alex.volkov
+Received POST request for login
+Attempting login for user: alex.volkov
+Invalid login attempt for user: alex.volkov
+Received POST request for login
+Attempting login for user: alex.volkov
+User alex.volkov logged in successfully
+Watching for file changes with StatReloader
+Not Found: /favicon.ico
+Form data received: {'csrfmiddlewaretoken': 'ra0utAIUbWrLBbHtnPTRolhAfPeJtcmLtXcvMRvcitndbigibtgzvztdGfbF4D00', 'first_name': 'ria', 'last_name': 'tambve', 'username': 'riatambve123', 'email': 'ria.tambve@gmail.com', 'about_me': '', 'interests': 'humanities_arts', 'profile_pic': ''}
+User riatambve123 created successfully
+Watching for file changes with StatReloader
+Not Found: /favicon.ico
+Watching for file changes with StatReloader
+Not Found: /favicon.ico
+Watching for file changes with StatReloader
+Not Found: /favicon.ico
+Watching for file changes with StatReloader
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Watching for file changes with StatReloader
+Not Found: /favicon.ico
+Form data received: {'csrfmiddlewaretoken': 'PTBIxTUbiqlWkJYWECsd5FdweiaGzZAH8Y0B58r4fQ9tICUCfYhj4ppkH76WoK1Z', 'first_name': 'raj', 'last_name': 'sharma', 'username': 'raj.s', 'email': 'rajsharma@gmail.com', 'about_me': 'i am an MCA student', 'interests': 'health_lifestyle'}
+User raj.s created successfully
+Received POST request for login
+Attempting login for user: raj.s
+User raj.s logged in successfully
+Watching for file changes with StatReloader
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Watching for file changes with StatReloader
+Not Found: /favicon.ico
+Form data received: {'csrfmiddlewaretoken': 'hLX9CkcsOiCH2Zv5Uvf7nc8MhUghieZH2kUTW07KL7jwlzpQ72TrWME41BoLSNaI', 'first_name': 'sam', 'last_name': 'p', 'username': 'sam.p', 'email': 'samp123@gmail.com', 'about_me': '', 'interests': 'health_lifestyle'}
+User sam.p created successfully
+Received POST request for login
+Attempting login for user: samp123
+Invalid login attempt for user: samp123
+Received POST request for login
+Attempting login for user: sam.p
+User sam.p logged in successfully
+Watching for file changes with StatReloader
+Form data received: {'csrfmiddlewaretoken': 'HoBlFgWnj1dKNU0Q033lFaUaMKhm3p4zG1Ndp2DGf5rLSaxOACbEuKle9t7Rb5ud', 'first_name': 'sam', 'last_name': 'p', 'username': 'sam', 'email': 'sam@gmail.com', 'about_me': '', 'interests': 'health_lifestyle'}
+User sam created successfully
+Received POST request for login
+Attempting login for user: sam
+User sam logged in successfully
+Watching for file changes with StatReloader
+Not Found: /favicon.ico
+Watching for file changes with StatReloader
+Not Found: /favicon.ico
+Form data received: {'csrfmiddlewaretoken': 'cRYA8LSd8PympAlkjgCRf3NxnwGMcurqLsLiFXXzW8Ye6Zb99W3eA3yIx57DbhlG', 'first_name': 'sam', 'last_name': 'peters', 'username': 'sampeters', 'email': 'samp@gmail.com', 'about_me': '', 'interests': 'business_economy'}
+User sampeters created successfully
+Received POST request for login
+Attempting login for user: sampeters
+Invalid login attempt for user: sampeters
+Received POST request for login
+Attempting login for user: sampeters
+User sampeters logged in successfully
+Watching for file changes with StatReloader
+Not Found: /favicon.ico
+Watching for file changes with StatReloader
+Not Found: /favicon.ico
+Watching for file changes with StatReloader
+Not Found: /favicon.ico
+Watching for file changes with StatReloader
+Not Found: /favicon.ico
+Not Found: /accounts/profile/
+Watching for file changes with StatReloader
+D:\StudyHive\StudyHive\users\adapters.py changed, reloading.
+Watching for file changes with StatReloader
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+D:\StudyHive\StudyHive\users\adapters.py changed, reloading.
+Watching for file changes with StatReloader
+Not Found: /favicon.ico
+Form data received: {'csrfmiddlewaretoken': 'bBFbCW5vigVDytbmGq3JXxx18mOl7D5kViXmBDyoSLW7crkewxZlJEbQF7ce8eIV', 'first_name': 'wegfiwe', 'last_name': 'ewfwef', 'username': 'yinyang', 'email': 'yin.yanh.6969@gmail.com', 'about_me': '', 'interests': 'humanities_arts', 'profile_pic': ''}
+Form validation errors: <ul class="errorlist"><li>username<ul class="errorlist"><li>A user with that username already exists.</li></ul></li></ul>
+Not Found: /favicon.ico
+Not Found: /users/google_login/
+Not Found: /favicon.ico

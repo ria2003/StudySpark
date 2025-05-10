@@ -243,7 +243,7 @@ SOCIALACCOUNT_LOGIN_ON_GET = True
 ACCOUNT_LOGOUT_ON_GET = True
 
 # Redirect settings
-LOGIN_URL = 'login'  # or whatever your login URL name is in your urls.py
+LOGIN_REDIRECT_URL = '/users/google_login/'
 ACCOUNT_ADAPTER = 'users.adapters.CustomAccountAdapter'
 SOCIALACCOUNT_ADAPTER = 'users.adapters.CustomSocialAccountAdapter'
 SOCIALACCOUNT_AUTO_SIGNUP = True

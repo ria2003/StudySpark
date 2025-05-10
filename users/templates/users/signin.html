@@ -35,8 +35,9 @@
                     <button type="submit" class="btn btn-primary w-100">Sign In</button>
                     <div class="text-center mt-3">
                         <p>or</p>
-                        <a href="{% provider_login_url 'google' %}" class="btn btn-outline-danger w-100">
-                            <i class="fab fa-google"></i> Login with Google
+                        <!-- Google Sign-In Button -->
+                        <a href="{% provider_login_url 'google' process='login' %}" class="btn btn-outline-danger w-100 mb-3">
+                            <i class="fab fa-google me-2"></i> Continue with Google
                         </a>
                     </div>
                     <div class="text-center mt-3 mb-0">

@@ -16,6 +16,7 @@ from django.contrib.auth.views import (
     PasswordResetCompleteView
 )
 from django.urls import reverse_lazy
+from django.contrib.auth.decorators import login_required
 
 
 
@@ -51,6 +52,25 @@ class CustomPasswordResetConfirmView(PasswordResetConfirmView):
 class CustomPasswordResetCompleteView(PasswordResetCompleteView):
     template_name = 'users/password_reset_complete.html'
 
+# Add a decorator to check if profile is complete
+def profile_required(view_func):
+    def _wrapped_view(request, *args, **kwargs):
+        if request.user.is_authenticated:
+            # Check if user has completed additional details
+            if not request.user.additional_details_filled:
+                social_account = SocialAccount.objects.filter(user=request.user).first()
+                if social_account:
+                    messages.warning(request, 'Please complete your profile before continuing.')
+                    return redirect('complete_google_profile')
+                else:
+                    # If it's not a social account but somehow additional_details_filled is False
+                    request.user.additional_details_filled = True
+                    request.user.save()
+            return view_func(request, *args, **kwargs)
+        return redirect('login')
+    return _wrapped_view
+
+
 def register(request):
     if request.method == 'POST':
         form = UserRegistrationForm(request.POST, request.FILES)
@@ -62,15 +82,12 @@ def register(request):
             if form.is_valid():
                 # Create user using the form's save method which handles interests properly
                 user = form.save()
+                user.additional_details_filled = True  # Set to True for regular signups
+                user.save()
                 logger.info(f"User {user.username} created successfully")
                 
-                # Specify the authentication backend when logging in
-                from django.contrib.auth import login
-                from django.contrib.auth.backends import ModelBackend
-                login(request, user, backend='django.contrib.auth.backends.ModelBackend')
-                
-                messages.success(request, 'Account created successfully!')
-                return redirect('login')
+                messages.success(request, 'Account created successfully! Please log in.')
+                return redirect('login')  # Redirect to login after signup
             else:
                 # Log form errors
                 logger.error(f"Form validation errors: {form.errors}")
@@ -101,6 +118,13 @@ def user_login(request):
                 if not remember_me:
                     request.session.set_expiry(0)
                 logger.info(f"User {username} logged in successfully")
+                
+                # Check if user has completed additional details
+                if not user.additional_details_filled:
+                    social_account = SocialAccount.objects.filter(user=user).first()
+                    if social_account:
+                        return redirect('complete_google_profile')
+                
                 messages.success(request, 'Login successful!')
                 return redirect('home')
             else:
@@ -113,24 +137,34 @@ def user_login(request):
             
     return render(request, 'users/signin.html', {'profile_pic_url': request.user.profile_pic.url if request.user.is_authenticated else None})
 
-
+# Google login handler - this is called after successful Google authentication
 def google_login(request):
-    if request.user.is_authenticated:
-        social_account = SocialAccount.objects.filter(user=request.user).first()
-        if social_account and not request.user.additional_details_filled:
-            return redirect('complete_google_profile')
+    if not request.user.is_authenticated:
+        return redirect('login')
         
-    context = {'profile_pic_url': request.user.profile_pic.url if request.user.is_authenticated else None}
+    social_account = SocialAccount.objects.filter(user=request.user).first()
+    if social_account and not request.user.additional_details_filled:
+        messages.info(request, 'Please complete your profile to continue.')
+        return redirect('complete_google_profile')
+        
     return redirect('home')
 
+@login_required
 def complete_google_profile(request):
+    # Redirect non-Google users or users who already completed their profile
     social_account = SocialAccount.objects.filter(user=request.user).first()
+    if not social_account:
+        messages.warning(request, 'This page is only for Google users.')
+        return redirect('home')
+        
+    if request.user.additional_details_filled:
+        messages.info(request, 'Your profile is already complete.')
+        return redirect('home')
     
     if request.method == 'POST':
         user = request.user
         
         # Save about_me to the user model
-        # Note: You'll need to add the about_me field to your User model
         user.about_me = request.POST.get('about_me')
         
         # Handle interests
@@ -152,6 +186,7 @@ def complete_google_profile(request):
         
         user.additional_details_filled = True
         user.save()
+        messages.success(request, 'Profile completed successfully!')
         return redirect('home')
     
     # Pre-fill email and other fields from Google account
