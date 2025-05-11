@@ -20,7 +20,7 @@ import os
 load_dotenv()
 
 DEBUG = False
-ALLOWED_HOSTS = ['studyspark-a2uv.onrender.com', 'localhost', '127.0.0.1']  # Will change once deployed
+ALLOWED_HOSTS = ['*']  # Will change once deployed
 
 DATABASES = {
     'default': dj_database_url.config(default=os.environ.get('DATABASE_URL'))
