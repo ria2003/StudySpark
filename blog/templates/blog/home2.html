@@ -203,13 +203,10 @@
             <div class="leaderboard-item">
                 <div class="rank-badge">{{ forloop.counter }}</div>
                 <div class="author-info">
-                    <img src="{{ author.profile_pic.url }}" 
-                         class="rounded-circle" 
-                         width="30" height="30" 
-                         alt="{{ author.username }}">
-                         <a href="{% url 'user_profile_view' author.id %}" style="text-decoration: none;">
-                            <h5 class="leaderboard-title">{{ author.username }}</h5>
-                        </a>
+                    <img src="{{ author.profile_pic.url }}" alt="" class="rounded-circle me-2" width="40" height="40">
+                    <a href="{% url 'user_profile_view' author.id %}" style="text-decoration: none;">
+                        <h5 class="leaderboard-title">{{ author.username }}</h5>
+                    </a>
                 </div>
                 <div class="author-stats">
                     <span class="views">

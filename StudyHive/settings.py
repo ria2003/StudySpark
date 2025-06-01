@@ -22,9 +22,12 @@ load_dotenv()
 DEBUG = False
 ALLOWED_HOSTS = ['*']  # Will change once deployed
 
+
 DATABASES = {
     'default': dj_database_url.config(default=os.environ.get('DATABASE_URL'))
 }
+
+
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -164,7 +167,9 @@ WSGI_APPLICATION = 'StudyHive.wsgi.application'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 # settings.py
+
 '''
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -269,6 +274,9 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'riajayanttambve@gmail.com'  # Your email
 EMAIL_HOST_PASSWORD = 'lxob ilyd yztz tjdi'  # Your email password or app password
+
+# WhiteNoise configuration for serving static and media files
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # For development/testing, you can use the console backend instead:
 # EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
