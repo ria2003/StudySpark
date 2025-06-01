@@ -25,4 +25,9 @@ urlpatterns = [
     path('users/', include('users.urls')),
     path('accounts/', include('allauth.urls')),
     path('summernote/', include('django_summernote.urls')),
-]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+]# Add this to serve media files in production
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+else:
+    # For production, serve media files through WhiteNoise
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
