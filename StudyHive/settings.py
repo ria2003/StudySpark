@@ -15,6 +15,16 @@ import os
 from dotenv import load_dotenv
 import dj_database_url
 import os
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
+
+# Cloudinary configuration
+cloudinary.config(
+    cloud_name="dovnujru7",  # Replace with your Cloudinary cloud name
+    api_key="725691768471152",        # Replace with your Cloudinary API key
+    api_secret="Nfr8yhCSIOax60_JkQ1l7ikiW8w",  # Replace with your Cloudinary API secret
+)
 
 # Load environment variables from .env file
 load_dotenv()
@@ -87,7 +97,18 @@ INSTALLED_APPS = [
     'django_summernote',
     'taggit',
     'widget_tweaks',
+    'cloudinary_storage',
+    'cloudinary',
 ]
+# Media files configuration for Cloudinary
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': 'dovnujru7',
+    'API_KEY': '725691768471152',
+    'API_SECRET': 'Nfr8yhCSIOax60_JkQ1l7ikiW8w',
+}
+
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+
 
 # Summernote Configuration
 SUMMERNOTE_CONFIG = {
