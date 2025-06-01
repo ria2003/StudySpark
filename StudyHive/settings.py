@@ -277,6 +277,9 @@ EMAIL_HOST_PASSWORD = 'lxob ilyd yztz tjdi'  # Your email password or app passwo
 
 # WhiteNoise configuration for serving static and media files
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+# Add media files to WhiteNoise - THIS IS THE KEY ADDITION
+WHITENOISE_USE_FINDERS = True
+WHITENOISE_AUTOREFRESH = True
 
 # For development/testing, you can use the console backend instead:
 # EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
