@@ -1,4 +1,3 @@
-# views.py
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, authenticate, logout
 from django.contrib import messages
@@ -9,6 +8,8 @@ import logging
 import requests
 from django.core.files.base import ContentFile
 from allauth.socialaccount.models import SocialAccount
+
+# built-in Django class-based views provided by the Django authentication system
 from django.contrib.auth.views import (
     PasswordResetView, 
     PasswordResetDoneView, 
@@ -28,7 +29,8 @@ class CustomPasswordResetView(PasswordResetView):
     email_template_name = 'users/password_reset_email.html'
     subject_template_name = 'users/password_reset_subject.txt'
     success_url = reverse_lazy('password_reset_done')
-    
+
+    # overriding this function from FormView which is inherited by PasswordResetView to add custom logic before calling default behaviour
     def form_valid(self, form):
         email = form.cleaned_data['email']
         # Check if this email belongs to a Google-authenticated user
@@ -37,8 +39,10 @@ class CustomPasswordResetView(PasswordResetView):
         if social_user:
             # Add an error to the form if the user is authenticated via Google
             form.add_error('email', 'This email is registered via Google. Please use Google Sign-In instead.')
+            # Prevents proceeding and shows the form again with errors
             return self.form_invalid(form)
-        
+
+        # If no error, proceeds with default password reset behavior
         return super().form_valid(form)
 
 # Standard password reset views with custom templates
@@ -52,7 +56,7 @@ class CustomPasswordResetConfirmView(PasswordResetConfirmView):
 class CustomPasswordResetCompleteView(PasswordResetCompleteView):
     template_name = 'users/password_reset_complete.html'
 
-# Add a decorator to check if profile is complete
+# Added a decorator to check if profile is complete
 def profile_required(view_func):
     def _wrapped_view(request, *args, **kwargs):
         if request.user.is_authenticated:
