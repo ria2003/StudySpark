@@ -82,7 +82,7 @@ def register(request):
     if request.method == 'POST':
         form = UserRegistrationForm(request.POST, request.FILES)
         try:
-            # Log form data (exclude passwords)
+            # Creates a dictionary of the submitted fields excludes password
             form_data = {k: v for k, v in request.POST.items() if 'password' not in k}
             logger.info(f"Form data received: {form_data}")
             
