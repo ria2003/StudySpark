@@ -21,16 +21,16 @@ import cloudinary.api
 
 # Cloudinary configuration
 cloudinary.config(
-    cloud_name="dovnujru7",  # Replace with your Cloudinary cloud name
-    api_key="725691768471152",        # Replace with your Cloudinary API key
-    api_secret="Nfr8yhCSIOax60_JkQ1l7ikiW8w",  # Replace with your Cloudinary API secret
+    cloud_name="dovnujru7",  
+    api_key="725691768471152",       
+    api_secret="Nfr8yhCSIOax60_JkQ1l7ikiW8w",  
 )
 
 # Load environment variables from .env file
 load_dotenv()
 
 DEBUG = False
-ALLOWED_HOSTS = ['*']  # Will change once deployed
+ALLOWED_HOSTS = ['*']  
 
 
 DATABASES = {
@@ -78,7 +78,6 @@ LOGGING = {
 
 
 # Application definition
-
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -100,6 +99,7 @@ INSTALLED_APPS = [
     'cloudinary_storage',
     'cloudinary',
 ]
+
 # Media files configuration for Cloudinary
 CLOUDINARY_STORAGE = {
     'CLOUD_NAME': 'dovnujru7',
@@ -186,8 +186,6 @@ WSGI_APPLICATION = 'StudyHive.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
-
-# settings.py
 
 '''
 
@@ -286,7 +284,6 @@ ACCOUNT_ADAPTER = 'users.adapters.CustomAccountAdapter'
 SOCIALACCOUNT_ADAPTER = 'users.adapters.CustomSocialAccountAdapter'
 SOCIALACCOUNT_AUTO_SIGNUP = True
 
-# Add these settings to your settings.py file
 
 # Email configuration
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
@@ -298,11 +295,9 @@ EMAIL_HOST_PASSWORD = 'lxob ilyd yztz tjdi'  # Your email password or app passwo
 
 # WhiteNoise configuration for serving static and media files
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-# Add media files to WhiteNoise - THIS IS THE KEY ADDITION
 WHITENOISE_USE_FINDERS = True
 WHITENOISE_AUTOREFRESH = True
 
-# For development/testing, you can use the console backend instead:
 # EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 
