@@ -42,7 +42,7 @@ class CustomPasswordResetView(PasswordResetView):
             # Prevents proceeding and shows the form again with errors
             return self.form_invalid(form)
 
-        # If no error, proceeds with default password reset behavior
+        # If no error, proceeds with default password reset behavior i.e calls form_valid()
         return super().form_valid(form)
 
 # Standard password reset views with custom templates
@@ -62,6 +62,9 @@ def profile_required(view_func):
         if request.user.is_authenticated:
             # Check if user has completed additional details
             if not request.user.additional_details_filled:
+                # SocialAccount model — this is provided by django-allauth.
+                # stores OAuth details (like email, name, profile picture, provider) when a user logs in via social accounts like Google, GitHub, etc
+                # # Check SocialAccount model for current user nd return first match
                 social_account = SocialAccount.objects.filter(user=request.user).first()
                 if social_account:
                     messages.warning(request, 'Please complete your profile before continuing.')
@@ -84,23 +87,22 @@ def register(request):
             logger.info(f"Form data received: {form_data}")
             
             if form.is_valid():
-                # Create user using the form's save method which handles interests properly
+                # Create user using the form's save method 
                 user = form.save()
                 user.additional_details_filled = True  # Set to True for regular signups
                 user.save()
                 logger.info(f"User {user.username} created successfully")
                 
                 messages.success(request, 'Account created successfully! Please log in.')
-                return redirect('login')  # Redirect to login after signup
+                return redirect('login')  
             else:
-                # Log form errors
                 logger.error(f"Form validation errors: {form.errors}")
                 # Form errors will be displayed in the template
         except Exception as e:
             logger.error(f"Error creating user: {str(e)}")
             messages.error(request, f"Error creating account: {str(e)}")
     else:
-        # GET request - create empty form
+        # GET request (page load) - create empty form so the template can render blank fields
         form = UserRegistrationForm()
         
     # Pass the form instance to the template
@@ -115,10 +117,14 @@ def user_login(request):
             remember_me = request.POST.get('remember_me')
             
             logger.info(f"Attempting login for user: {username}")
+            # built-in function that checks if these credentials match a valid user and returns uder object
             user = authenticate(username=username, password=password)
             
             if user:
+                # creates session for the user
                 login(request, user)
+                # if user didn’t tick Remember Me, the session will expire when the browser is closed
+                # if user ticks remember me, the session lasts longer (default: 2 weeks)
                 if not remember_me:
                     request.session.set_expiry(0)
                 logger.info(f"User {username} logged in successfully")
@@ -139,6 +145,9 @@ def user_login(request):
             logger.error(f"Login error: {str(e)}")
             messages.error(request, f"Login error: {str(e)}")
             
+    # runs for initial page load or invalid login attempts to show form again
+    # If the user is already logged in -> shows their profile picture on the login page 
+    # else -> just renders the form
     return render(request, 'users/signin.html', {'profile_pic_url': request.user.profile_pic.url if request.user.is_authenticated else None})
 
 # Google login handler - this is called after successful Google authentication
@@ -153,6 +162,7 @@ def google_login(request):
         
     return redirect('home')
 
+# let google users complete their profile by filling additional details required which aren’t provided directly by Google.
 @login_required
 def complete_google_profile(request):
     # Redirect non-Google users or users who already completed their profile
@@ -206,10 +216,13 @@ def complete_google_profile(request):
         'initial_username': initial_username,
         'profile_pic_url': social_account.extra_data.get('picture') if social_account else None
     }
+
+    # renders form template and passes prefilled values stored in context
     return render(request, 'users/complete_google_profile.html', context)
 
 
 def user_logout(request):
+    # ends user session
     logout(request)
     messages.success(request, 'You have been logged out.')
     return redirect('login')
