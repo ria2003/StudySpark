@@ -32,10 +32,15 @@ load_dotenv()
 DEBUG = False
 ALLOWED_HOSTS = ['*']  
 
+import google.generativeai as genai
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
+'''
 DATABASES = {
     'default': dj_database_url.config(default=os.environ.get('DATABASE_URL'))
 }
+'''
+
 
 
 
@@ -125,7 +130,8 @@ SUMMERNOTE_CONFIG = {
             ['view', ['fullscreen', 'codeview']],
         ],
         'attachment_filesize_limit': 20 * 1024 * 1024,  # 20MB
-    }
+    },
+    'attachment_storage_class': 'cloudinary_storage.storage.MediaCloudinaryStorage',
 }
 
 MIDDLEWARE = [
@@ -187,7 +193,6 @@ WSGI_APPLICATION = 'StudyHive.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-'''
 
 DATABASES = {
     'default': {
@@ -199,7 +204,7 @@ DATABASES = {
         'PORT': '5432',
     }
 }
-'''
+
 
 
 
@@ -242,8 +247,8 @@ STATICFILES_DIRS = [
     BASE_DIR / 'static',
 ]
 
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+#MEDIA_URL = '/media/'
+#MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
@@ -287,11 +292,11 @@ SOCIALACCOUNT_AUTO_SIGNUP = True
 
 # Email configuration
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'  # Or your email service provider
+EMAIL_HOST = 'smtp.gmail.com'  
 EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'riajayanttambve@gmail.com'  # Your email
-EMAIL_HOST_PASSWORD = 'lxob ilyd yztz tjdi'  # Your email password or app password
+EMAIL_USE_TLS = True 
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
 
 # WhiteNoise configuration for serving static and media files
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'

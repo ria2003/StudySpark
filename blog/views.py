@@ -753,7 +753,7 @@ def generate_summary(request, note_id):
     logger = logging.getLogger(__name__)
     try:
         # Configure Gemini API
-        genai.configure(api_key='AIzaSyC25rIRn5BegOUq5lYvj1p2CMPwhPDAGrQ')
+        genai.configure(api_key=settings.GEMINI_API_KEY)
         
         # Fetch note
         note = PostNote.objects.get(id=note_id)
@@ -950,7 +950,7 @@ def generate_quiz(request, note_id):
             question_count = 5  # Default to 5 if invalid
         
         # Configure Gemini API
-        genai.configure(api_key='AIzaSyC25rIRn5BegOUq5lYvj1p2CMPwhPDAGrQ')
+        genai.configure(api_key=settings.GEMINI_API_KEY)
         
         # Fetch note
         note = PostNote.objects.get(id=note_id)
@@ -1215,7 +1215,6 @@ def notification_stream(request):
     response['X-Accel-Buffering'] = 'no'  # For NGINX
     return response
 
-# ADD this utility function - call this whenever a notification is created
 def update_notification_count(user):
     """
     Update the notification count in cache when a new notification is created
@@ -1642,7 +1641,7 @@ def enhance_content(request):
     logger = logging.getLogger(__name__)
     try:
         # Configure Gemini API
-        genai.configure(api_key='AIzaSyC25rIRn5BegOUq5lYvj1p2CMPwhPDAGrQ')
+        genai.configure(api_key=settings.GEMINI_API_KEY)
         
         # Parse request data
         data = json.loads(request.body)

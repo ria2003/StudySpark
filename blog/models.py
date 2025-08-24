@@ -97,7 +97,6 @@ class PostNote(models.Model):
             except (AttributeError, IndexError):
                 return None, None
         
-        # For regular URLs, just return the URL itself
         return 'url', image_src
 
     class Meta:
